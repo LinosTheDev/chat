@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chat App</title>
+</head>
+<body>
+  <h1>Chat App</h1>
+
+  <!-- Authentication Section -->
+  <div>
+    <label for="username">Enter your username:</label>
+    <input type="text" id="username" placeholder="Your username">
+    <button onclick="setUsername()">Set Username</button>
+  </div>
+
+  <!-- Chat Section -->
+  <div>
+    <label for="otherUsername">Enter username to chat with:</label>
+    <input type="text" id="otherUsername" placeholder="Other user's username">
+    <button onclick="startChat()">Start Chat</button>
+  </div>
+
+  <div id="chatArea">
+    <div id="chatMessages"></div>
+    <input type="text" id="messageInput" placeholder="Type your message">
+    <button onclick="sendMessage()">Send</button>
+  </div>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.2/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.2/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.2/firebase-database.js"></script>
+
+  <!-- Your Firebase Config -->
+  <script src="firebase-config.js"></script>
+
+  <!-- Your JavaScript Code -->
+  <script src="app.js"></script>
+</body>
+</html>

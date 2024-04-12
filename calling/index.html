@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebRTC Voice Calling</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background-color: #f5f5f5;
+        }
+        #container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        #callNotification {
+            display: none;
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 20px;
+            background-color: #fff;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            border-radius: 5px;
+            z-index: 999;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <h1>WebRTC Voice Calling</h1>
+        <label for="username">Your Username:</label>
+        <input type="text" id="usernameInput" placeholder="Enter your username">
+        <button onclick="setUsername()">Set Username</button><br>
+        <label for="callee">Call To:</label>
+        <input type="text" id="callee" placeholder="Enter username to call"><br>
+        <button onclick="startCall()">Call</button>
+    </div>
+
+    <div id="callNotification">
+        <span id="callerName"></span> is calling...
+        <button onclick="acceptCall()">Accept</button>
+        <button onclick="declineCall()">Decline</button>
+    </div>
+
+    <script>
+        let localStream;
+        let pc;
+        let isCaller;
+        let username;
+        let db;
+
+        const configuration = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
+        const constraints = { audio: true };
+
+        function setUsername() {
+            username = document.getElementById('usernameInput').value;
+            if (!username) {
+                alert('Please enter your username');
+                return;
+            }
+            document.getElementById('usernameInput').disabled = true;
+        }
+
+        async function startCall() {
+            const callee = document.getElementById('callee').value;
+            if (!username || !callee) {
+                alert('Please enter both your username and the username you want to call');
+                return;
+            }
+            isCaller = true;
+
+            db = firebase.firestore();
+
+            db.collection('calls').doc(callee).set({
+                caller: username,
+                status: 'calling'
+            }).then(() => {
+                console.log('Call request sent');
+            }).catch(error => {
+                console.error('Error sending call request:', error);
+            });
+
+            document.getElementById('container').style.display = 'none';
+        }
+
+        async function acceptCall() {
+            isCaller = false;
+            db = firebase.firestore();
+
+            const callee = username;
+            db.collection('calls').doc(callee).get().then(doc => {
+                const data = doc.data();
+                if (data && data.caller) {
+                    startPeerConnection(data.caller);
+                    db.collection('calls').doc(callee).delete().then(() => {
+                        console.log('Call request deleted');
+                    }).catch(error => {
+                        console.error('Error deleting call request:', error);
+                    });
+                }
+            }).catch(error => {
+                console.error('Error accepting call:', error);
+            });
+
+            document.getElementById('container').style.display = 'none';
+            document.getElementById('callNotification').style.display = 'none';
+        }
+
+        function declineCall() {
+            const callee = username;
+            db = firebase.firestore();
+            db.collection('calls').doc(callee).delete().then(() => {
+                console.log('Call request deleted');
+            }).catch(error => {
+                console.error('Error deleting call request:', error);
+            });
+
+            document.getElementById('callNotification').style.display = 'none';
+            document.getElementById('container').style.display = 'flex';
+        }
+
+        async function startPeerConnection(caller) {
+            pc = new RTCPeerConnection(configuration);
+            pc.onicecandidate = handleICECandidateEvent;
+            pc.ontrack = handleTrackEvent;
+            localStream = await navigator.mediaDevices.getUserMedia(constraints);
+            localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+        }
+
+        async function handleICECandidateEvent(event) {
+            if (event.candidate) {
+                // Send ICE candidate to the caller via Firebase
+            }
+        }
+
+        async function handleTrackEvent(event) {
+            // Do nothing for voice call
+        }
+    </script>
+
+    <!-- Add your Firebase configuration here -->
+    <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-firestore.js"></script>
+    <script>
+      // Your web app's Firebase configuration
+      var firebaseConfig = {
+      apiKey: 'AIzaSyDo9xLGYs3rzhgJKV_qVEyNxCUaRratbXc',
+      authDomain: 'https://chat-linos-default-rtdb.firebaseio.com/',
+      projectId: 'chat-linos',
+      storageBucket: 'gs://chat-linos.appspot.com',
+      messagingSenderId: '335597863138',
+      appId: '1:335597863138:web:bb28765ae4a27bae99debb'
+      };
+      // Initialize Firebase
+      firebase.initializeApp(firebaseConfig);
+    </script>
+</body>
+</html>

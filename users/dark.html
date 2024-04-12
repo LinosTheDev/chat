@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chat by Linos!</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/3.1.9-1/crypto-js.js"></script>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+  <style>
+    body {
+      font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #000;
+      color: #ffffff; /* Default color for messages */
+      transition: filter 0.5s ease-in-out; /* Transition for background blur */
+    }
+    
+    #chat-container {
+      max-width: 600px;
+      margin: 50px auto;
+      border: 1px solid #2d2d2d;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    
+    #chat-messages {
+      height: 300px;
+      overflow-y: scroll;
+      padding: 10px;
+      background-color: #000000;
+      user-select: none;
+    }
+    
+    .message-container {
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .message-bubble {
+      max-width: 100%;
+      padding: 10px;
+      border-radius: 15px;
+      margin-bottom: 10px;
+      word-wrap: break-word; /* Ensures long text wraps within the message box */
+    }
+    
+    .sent-message {
+      background-color: #007aff;
+      color: #fff;
+      align-self: flex-end;
+    }
+    
+    .received-message {
+      background-color: #e5e5ea;
+      color: #333; /* Use default color for received messages */
+      align-self: flex-start;
+    }
+    
+    .input-container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px;
+    }
+    
+    .username-input,
+    .recipient-input,
+    #message-input {
+      width: calc(50% - 5px);
+      padding: 10px;
+      border: none;
+      border-top: 1px solid #2d2d2d;
+      border-radius: 10px 10px 10px 10px;
+      box-sizing: border-box;
+      margin-bottom: 10px;
+    }
+    
+    #image-input {
+      width: calc(100% - 5px);
+      padding: 10px;
+      border: none;
+      border-top: 1px solid #2d2d2d;
+      border-radius: 10px 10px 10px 10px;
+      box-sizing: border-box;
+      margin-bottom: 10px;
+      background-color: #fff;
+      color: black;
+    }
+    
+    #message-input {
+      width: calc(85%);
+      border-radius: 10px 10px 10px 10px;
+      background-color: #2d2d2d;
+      color: white;
+    }
+    
+    .hidden {
+      display: none;
+    }
+    
+    .send-btn,
+    #file-upload-btn,
+    .clear-btn,
+    #preview-btn {
+      width: calc(15% - 5px);
+      padding: 10px;
+      border: none;
+      color: #ffffff;
+      background-color: #007aff;
+      border-top: 1px solid #2d2d2d;
+      border-radius: 10px 10px 10px 10px;
+      box-sizing: border-box;
+      margin-bottom: 10px;
+      cursor: pointer;
+      display: flex; /* Make them flex containers */
+      justify-content: center; /* Align text horizontally in the center */
+      align-items: center; /* Align text vertically in the center */
+      height: 35px; /* Set the height to match other buttons */
+    }
+    
+    #info-container {
+      max-width: 600px;
+      margin: 0 auto;
+      overflow: hidden;
+    }
+    
+    .file-upload-container {
+      display: flex;
+      align-items: center;
+    }
+    
+    #file-upload-btn {
+      width: calc(85%);
+      padding: 10px;
+      border: none;
+      color: #ffffff;
+      background-color: #198e12;
+      border-top: 1px solid #2d2d2d;
+      border-radius: 10px 10px 10px 10px;
+      box-sizing: border-box;
+      margin-bottom: 10px;
+      cursor: pointer;
+    }
+    
+    #file-upload-btn:hover {
+      background-color: #B2e6c5;
+    }
+    
+    .send-btn:hover,
+    #preview-btn:hover,
+    .clear-btn:hover {
+      background-color: #5eacff;
+    }
+    
+    #preview-btn {
+      width: calc(100%);
+      font-size: 16px;
+    }
+
+    #file-upload-btn .icon {
+      margin-right: 5px;
+      vertical-align: middle;
+    }
+    
+    #file-upload-btn span {
+      font-size: 16px;
+      vertical-align: middle;
+    }
+    
+    .attached {
+      background-color: rgb(48, 176, 48) !important;
+      border-color: darkgreen !important;
+    }
+    
+    .file-upload-container {
+      text-align: center;
+      align-items: center;
+    }
+    
+    .clear-btn {
+      padding: 10px;
+      border: none;
+      background-color: #ff3333;
+      color: #fff;
+      border-radius: 10px;
+      cursor: pointer;
+      display: flex;
+      justify-content: center; /* Align text horizontally in the center */
+      align-items: center; /* Align text vertically in the center */
+      width: calc(15% - 5px); /* Adjust width to match other buttons */
+      margin-bottom: 10px;
+    }
+    
+    .clear-btn:hover {
+      background-color: #ff6666;
+    }
+    
+    .material-icons {
+      font-family: 'Material Icons';
+      font-weight: normal;
+      font-style: normal;
+      font-size: 18px;  /* Preferred icon size */
+      display: inline-block;
+      line-height: 1;
+      text-transform: none;
+      letter-spacing: normal;
+      word-wrap: normal;
+      white-space: nowrap;
+      direction: ltr;
+    
+      /* Support for all WebKit browsers. */
+      -webkit-font-smoothing: antialiased;
+      /* Support for Safari and Chrome. */
+      text-rendering: optimizeLegibility;
+    
+      /* Support for Firefox. */
+      -moz-osx-font-smoothing: grayscale;
+    
+      /* Support for IE. */
+      font-feature-settings: 'liga';
+    }
+    
+    .preview-popup {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0.8);
+      background-color: black;
+      border-radius: 10px;
+      padding: 20px;
+      z-index: 9999;
+      box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.5);
+      opacity: 0;
+      transition: transform 0.5s ease-in-out, opacity 0.5s ease-in-out;
+    }
+    
+    .preview-popup.visible {
+      transform: translate(-50%, -50%) scale(1);
+      opacity: 1;
+    }
+    
+    .close-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      cursor: pointer;
+    }
+    #blur-overlay {
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 9998; /* Ensure the overlay is behind the preview popup */
+}
+
+#blur-overlay.blurred {
+  filter: blur(5px); /* Keep the blur effect when added */
+}
+  </style>
+</head>
+<body>
+  <div id="blur-overlay">
+  <div id="chat-container">
+    <div id="chat-messages"></div>
+    <div class="input-container" id="input-container">
+      <input type="text" class="username-input" id="username-input" placeholder="Your Name">
+      <input type="text" class="recipient-input" id="recipient-input" placeholder="Recipient">
+      <input type="text" id="message-input" placeholder="Type your message...">
+      <button onclick="sendMessage()" class="send-btn">Send</button>
+      <label for="image-input" id="file-upload-btn">
+        <i class="material-icons icon">cloud_upload</i>
+        <span id="file-upload-label">Upload Image</span>
+      </label>
+      <input type="file" accept="image/*" id="image-input" style="display: none;">
+      <button onclick="clearFile()" class="clear-btn">Clear</button> <!-- Clear button for file upload -->
+      <button onclick="previewImage()" class="preview-btn" id="preview-btn">Preview Image</button>
+    </div>
+  </div>
+  <div id="info-container">
+    <h3 style="text-align:center">How to send images</h3>
+    <p style="text-align:center">Paste an image link, or upload an image.</p>
+    <hr>
+    <h3 style="text-align:center">Formatting</h3>
+    <p style="text-align:center">You can use <a href="https://www.markdownguide.org/cheat-sheet/" target="_blank">Markdown Basic Syntax</a>.</p>
+  </div>
+</div>
+  <!-- Preview popup -->
+  <div id="preview-popup" class="preview-popup">
+    <img id="popup-image" style="max-width: 100%; max-height: 100%;" />
+    <div class="close-btn" id="close-preview-btn" onclick="closePreview()">
+      <i class="material-icons">close</i>
+    </div>
+  </div>
+  <script src="https://www.gstatic.com/firebasejs/8.2.2/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.2.2/firebase-database.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.2.2/firebase-storage.js"></script>
+  <script>
+// Initialize Firebase
+const firebaseConfig = {
+      apiKey: 'AIzaSyDo9xLGYs3rzhgJKV_qVEyNxCUaRratbXc',
+      authDomain: 'https://chat-linos-default-rtdb.firebaseio.com/',
+      projectId: 'chat-linos',
+      storageBucket: 'gs://chat-linos.appspot.com',
+      messagingSenderId: '335597863138',
+      appId: '1:335597863138:web:bb28765ae4a27bae99debb'
+};
+
+firebase.initializeApp(firebaseConfig);
+
+const database = firebase.database();
+const storage = firebase.storage();
+const messagesRef = database.ref('dms');
+const imagesRef = storage.ref('images');
+
+const chatMessages = document.getElementById('chat-messages');
+const messageInput = document.getElementById('message-input');
+const usernameInput = document.getElementById('username-input');
+const recipientInput = document.getElementById('recipient-input');
+const inputContainer = document.getElementById('input-container');
+const uploadBtn = document.getElementById('file-upload-btn');
+
+// Function to parse URL parameters
+function getURLParams() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const withUser = urlParams.get('with');
+  const user = urlParams.get('user');
+  return { withUser, user };
+}
+
+// Function to populate input fields with URL parameters
+function populateInputs() {
+  const { withUser, user } = getURLParams();
+  if (withUser && user) {
+    recipientInput.value = withUser; // Now 'with' parameter is the recipient
+    usernameInput.value = user; // Now 'user' parameter is the sender
+    usernameInput.classList.add('hidden');
+    recipientInput.classList.add('hidden');
+  }
+}
+
+populateInputs(); // Call the function to populate inputs when the page loads
+
+// Function to send the message
+function sendMessage() {
+  const text = messageInput.value.trim();
+  const sender = usernameInput.value.trim();
+  const recipient = recipientInput.value.trim();
+  const imageFile = document.getElementById('image-input').files[0]; // Get the selected image file
+
+  if ((text !== '' || imageFile) && sender !== '' && recipient !== '') {
+    const key = sharedKey(sender, recipient);
+    const encryptedText = CryptoJS.AES.encrypt(text, key).toString();
+
+    // If there's an image file, upload it to Firebase Storage first
+    if (imageFile) {
+      const uploadTask = imagesRef.child(imageFile.name).put(imageFile);
+      uploadTask.on('state_changed',
+        (snapshot) => {
+          // Track upload progress if needed
+        },
+        (error) => {
+          console.error('Error uploading image:', error);
+        },
+        () => {
+          // When upload is complete, get the download URL and save message to database
+          uploadTask.snapshot.ref.getDownloadURL().then((downloadURL) => {
+            messagesRef.push({ sender, recipient, text: encryptedText, image: downloadURL, timestamp: firebase.database.ServerValue.TIMESTAMP });
+            messageInput.value = '';
+            clearFile(); // Clear file input and reset upload button after sending
+          });
+        }
+      );
+    } else {
+      // If there's no image, save only text to database
+      messagesRef.push({ sender, recipient, text: encryptedText, timestamp: firebase.database.ServerValue.TIMESTAMP });
+      messageInput.value = '';
+    }
+  }
+}
+
+// Function to convert plain URLs to clickable links
+function convertUrlsToLinks(text) {
+  return text.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" style="color:inherit">$1</a>');
+}
+
+// Function to convert markdown syntax to HTML
+function convertMarkdownToHTML(text) {
+  text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>'); // Bold
+  text = text.replace(/__(.*?)__/g, '<strong>$1</strong>'); // Bold (alternative syntax)
+  text = text.replace(/\*(.*?)\*/g, '<em>$1</em>'); // Italics
+  text = text.replace(/_(.*?)_/g, '<em>$1</em>'); // Italics (alternative syntax)
+  text = text.replace(/~~(.*?)~~/g, '<del>$1</del>'); // Strikethrough
+  text = text.replace(/`(.*?)`/g, '<code>$1</code>'); // Inline code
+  text = text.replace(/^\s*([-+*])\s*(.*)$/gm, '<li>$2</li>'); // Lists
+  text = text.replace(/^(#+)\s*(.*)$/gm, (match, p1, p2) => `<h${p1.length}>${p2}</h${p1.length}>`); // Headings
+  return text;
+}
+
+// Function to append a message to the chat window
+function appendMessage(username, text, isSent, imageUrl) {
+  const messageContainer = document.getElementById('chat-messages');
+
+  const messageElement = document.createElement('div');
+  const messageClass = isSent ? 'sent-message' : 'received-message';
+  messageElement.className = `message-bubble ${messageClass}`;
+
+  let messageContent = `<strong>${username}:</strong>`;
+
+  // Check if message contains image
+  if (imageUrl) {
+    messageContent += `<br><img src="${imageUrl}" style="max-width: 200px; max-height: 200px;">`;
+  }
+
+  // Add a line break if both image and text are present
+  if (imageUrl && text) {
+    messageContent += '<br>';
+  }
+
+  // Convert markdown syntax to HTML for text messages
+  if (text) {
+    const formattedText = convertMarkdownToHTML(text);
+    messageContent += ` ${formattedText}`;
+  }
+
+  messageElement.innerHTML = messageContent;
+
+  messageContainer.appendChild(messageElement);
+  messageContainer.scrollTop = messageContainer.scrollHeight;
+}
+
+// Function to decrypt and append a message to the chat window
+function appendDecryptedMessage(sender, recipient, encryptedText, imageUrl) {
+  const decryptedText = CryptoJS.AES.decrypt(encryptedText, sharedKey(sender, recipient)).toString(CryptoJS.enc.Utf8);
+
+  const currentSender = usernameInput.value.trim();
+  const currentRecipient = recipientInput.value.trim();
+
+  if ((sender === currentSender && recipient === currentRecipient) || (sender === currentRecipient && recipient === currentSender)) {
+    const username = sender === currentSender ? 'You' : sender;
+    const isSent = sender === currentSender;
+    appendMessage(username, decryptedText, isSent, imageUrl);
+  }
+}
+
+// Function to generate a shared key
+function sharedKey(sender, recipient) {
+  return `${sender}-${recipient}-shared-key`;
+}
+
+// Function to handle the keydown event for the message input
+document.getElementById('message-input').addEventListener('keydown', function(event) {
+  const cursorPosition = this.selectionStart; // Get cursor position
+  const value = this.value; // Get current input value
+
+  if (event.key === 'Enter' && !event.shiftKey) {
+    event.preventDefault(); // Prevent default behavior (sending message)
+    sendMessage(); // Call the sendMessage function when Enter is pressed without Shift
+  } else if (event.key === 'Enter' && event.shiftKey) {
+    this.value = value.slice(0, cursorPosition) + '\n' + value.slice(cursorPosition); // Add a new line character at cursor position
+    this.selectionStart = this.selectionEnd = cursorPosition + 1; // Set cursor position after the added new line character
+    event.preventDefault(); // Prevent default behavior (sending message)
+  }
+});
+
+// Function to handle the child added event for Firebase
+messagesRef.on('child_added', (snapshot) => {
+  const message = snapshot.val();
+  appendDecryptedMessage(message.sender, message.recipient, message.text, message.image);
+});
+
+let uploadCount = 0; // Initialize a counter for uploaded files
+
+// Event listener for file input change
+document.getElementById('image-input').addEventListener('change', function() {
+  const fileInput = this.files[0];
+  if (fileInput) {
+    uploadBtn.classList.add('attached');
+    uploadBtn.innerHTML = 'Uploaded!';
+  } else {
+    uploadBtn.classList.remove('attached');
+    uploadBtn.innerHTML = `
+      <i class="material-icons icon">cloud_upload</i>
+      <span id="file-upload-label">Upload Image</span>
+    `;
+  }
+});
+
+  // Rename the file to append a unique number
+  if (fileInput) {
+    const fileName = fileInput.name;
+    const fileExt = fileName.split('.').pop(); // Get the file extension
+    const baseName = fileName.substring(0, fileName.lastIndexOf('.')); // Get the file name without extension
+
+    const uniqueNumber = Math.floor(10000000 + Math.random() * 90000000); // Generate random 8-digit code
+    const newFileName = `${baseName}_${uniqueNumber}.${fileExt}`; // Append unique number to the file name
+
+    // Create a new file object with the renamed file
+    const renamedFile = new File([fileInput], newFileName, { type: fileInput.type });
+
+    // Replace the file input with the renamed file
+    this.files[0] = renamedFile;
+
+    // Upload the renamed file to Firebase Storage
+    const uploadTask = imagesRef.child(newFileName).put(renamedFile);
+    uploadTask.on('state_changed',
+      (snapshot) => {
+        // Track upload progress if needed
+      },
+      (error) => {
+        console.error('Error uploading image:', error);
+      },
+      () => {
+        // When upload is complete, reset file input and upload button
+        clearFile();
+      }
+    );
+  }
+
+// Function to clear the file input and reset the upload button
+function clearFile() {
+  const fileInput = document.getElementById('image-input');
+  fileInput.value = ''; // Clear the file input
+  // Only remove the 'attached' class and reset the button text if the upload button has 'attached' class
+  if (uploadBtn.classList.contains('attached')) {
+    uploadBtn.classList.remove('attached');
+    uploadBtn.innerHTML = `
+      <i class="material-icons icon">cloud_upload</i>
+      <span id="file-upload-label">Upload Image</span>
+    `;
+  }
+}
+
+// Function to preview the selected image
+// Function to preview the selected image
+function previewImage() {
+  const fileInput = document.getElementById('image-input');
+  const file = fileInput.files[0];
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const imageUrl = e.target.result;
+      const previewPopup = document.getElementById('preview-popup');
+      const popupImage = document.getElementById('popup-image');
+      popupImage.src = imageUrl;
+      previewPopup.classList.add('visible');
+      document.getElementById('blur-overlay').classList.add('blurred'); // Apply blur effect to overlay
+      popupImage.classList.add('zoom-in');
+    };
+    reader.readAsDataURL(file);
+  }
+}
+
+// Function to close the preview popup
+function closePreview() {
+  const previewPopup = document.getElementById('preview-popup');
+  previewPopup.classList.remove('visible');
+  document.getElementById('blur-overlay').classList.remove('blurred'); // Remove blur effect from overlay
+}
+
+
+// Event listeners for the preview and close buttons
+document.getElementById('preview-btn').addEventListener('click', previewImage);
+document.getElementById('close-preview-btn').addEventListener('click', closePreview);
+
+// Event listener to close the preview popup when clicking outside the image
+document.getElementById('preview-popup').addEventListener('click', (event) => {
+  if (event.target === document.getElementById('preview-popup')) {
+    closePreview();
+  }
+});
+</script>
+</body>
+</html>
