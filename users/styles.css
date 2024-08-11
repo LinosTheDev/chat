@@ -1,0 +1,307 @@
+/* Hidden class to hide elements */
+.hidden {
+    display: none !important; /* Ensure it overrides any other display settings */
+}
+
+/* General Styles */
+body {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f0f1f6; /* Light background for a modern look */
+    color: #333; /* Default color for messages */
+}
+
+/* Chat Container */
+#chat-container {
+    max-width: 600px;
+    margin: 50px auto;
+    border-radius: 20px; /* More rounded corners */
+    overflow: hidden;
+    background-color: #ffffff; /* White background for the chat */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+    display: flex;
+    flex-direction: column;
+}
+
+/* Chat Messages */
+#chat-messages {
+    height: 300px;
+    overflow-y: scroll;
+    padding: 20px; /* More padding for a spacious look */
+    background-color: #f9f9f9; /* Slightly different background for messages */
+    display: flex;
+    flex-direction: column;
+    gap: 12px; /* Space between messages */
+}
+
+/* Message Bubbles */
+.message-bubble {
+    padding: 15px;
+    border-radius: 20px; /* Fully rounded corners */
+    max-width: 75%; /* Adjust to fit content */
+    word-wrap: break-word;
+    display: inline-block; /* Adjusts size to fit content */
+}
+
+/* Sent Messages */
+.sent-message {
+    background-color: #007aff;
+    color: #ffffff;
+    align-self: flex-end; /* Align sent messages to the right */
+}
+
+/* Received Messages */
+.received-message {
+    background-color: #e5e5ea;
+    color: #333;
+    align-self: flex-start; /* Align received messages to the left */
+}
+
+/* Input Container */
+.input-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between; /* Align items with space between */
+    align-items: center;
+    padding: 15px; /* More padding for the input area */
+    border-top: 1px solid #e1e1e1; /* Lighter border */
+}
+
+/* Input Fields */
+.username-input,
+.recipient-input,
+#message-input {
+    width: calc(50% - 5px); /* Adjust spacing */
+    padding: 12px;
+    border: 1px solid #e1e1e1; /* Subtle border */
+    border-radius: 12px; /* Rounded corners for inputs */
+    box-sizing: border-box;
+    margin-bottom: 10px;
+}
+
+#message-input {
+    width: calc(85% - 3px); /* Adjust width */
+    height: 40px; /* Set a specific height */
+    line-height: 16px; /* Adjust line height for vertical alignment */
+}
+
+/* File Upload Input */
+#image-input {
+    width: calc(100% - 10px); /* Full width */
+    background-color: #ffffff; /* White background */
+    color: #333;
+    margin-bottom: 10px; /* Ensure spacing */
+}
+
+/* Buttons */
+.send-btn,
+.clear-btn,
+#preview-btn,
+#file-upload-btn {
+    width: calc(15% - 5px); /* Adjust width */
+    padding: 0; /* Remove default padding */
+    border: none;
+    border-radius: 10px;
+    color: #ffffff;
+    background-color: #007aff;
+    margin-bottom: 10px;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 40px; /* Match the height of the input field */
+    box-sizing: border-box; /* Ensure padding does not affect height */
+    font-size: 16px; /* Adjust font size for consistency */
+}
+
+#file-upload-btn {
+    width: calc(100%); /* Full width for file upload button */
+    background-color: #198e12;
+    margin-bottom: 10px; /* Spacing between file upload and other buttons */
+}
+
+#file-upload-btn:hover {
+    background-color: #16b90d;
+}
+
+.send-btn:hover,
+#preview-btn:hover,
+.clear-btn:hover {
+    background-color: #0056d2; /* Darker shade on hover */
+}
+
+#preview-btn {
+    width: calc(85% - 3px); /* Full width for preview button */
+    font-size: 16px; /* Ensure consistency */
+}
+
+.clear-btn {
+    background-color: #ff3333;
+}
+
+.clear-btn:hover {
+    background-color: #e62e2e;
+}
+
+/* Close Button */
+.close-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    cursor: pointer;
+    font-size: 20px; /* Larger close button */
+}
+
+/* Preview Popup */
+.preview-popup {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.9);
+    background-color: #ffffff;
+    border-radius: 20px; /* Rounded corners */
+    padding: 20px;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2); /* More pronounced shadow */
+    opacity: 0;
+    transition: transform 0.4s ease-in-out, opacity 0.4s ease-in-out;
+    display: flex; /* Use flexbox for alignment */
+    align-items: center;
+    gap: 10px; /* Space between image and trash can */
+}
+
+.preview-popup img {
+    max-width: 60%; /* Adjust to fit content */
+    max-height: 60%; /* Ensure the image fits well */
+    object-fit: contain; /* Maintain aspect ratio */
+}
+
+.preview-popup .close-btn {
+    font-size: 20px; /* Larger close button */
+}
+
+/* Blur Overlay */
+#blur-overlay {
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 9998;
+}
+
+#blur-overlay.blurred {
+    filter: blur(6px); /* Increased blur effect */
+}
+
+/* Material Symbols */
+.material-symbols-outlined {
+    font-size: 18px;
+    font-variation-settings:
+      'FILL' 0,
+      'wght' 400,
+      'GRAD' 0,
+      'opsz' 40;
+}
+
+/* Material Icons */
+.material-icons {
+    font-family: 'Material Icons';
+    font-weight: normal;
+    font-style: normal;
+    font-size: 25px;  /* Preferred icon size */
+    display: inline-block;
+    line-height: 1;
+    text-transform: none;
+    letter-spacing: normal;
+    word-wrap: normal;
+    white-space: nowrap;
+    direction: ltr;
+
+    /* Support for all WebKit browsers. */
+    -webkit-font-smoothing: antialiased;
+    /* Support for Safari and Chrome. */
+    text-rendering: optimizeLegibility;
+
+    /* Support for Firefox. */
+    -moz-osx-font-smoothing: grayscale;
+
+    /* Support for IE. */
+    font-feature-settings: 'liga';
+}
+
+/* Additional Classes for Flexibility */
+.file-upload-container {
+    text-align: center; /* Center text for the file upload container */
+    align-items: center;
+}
+
+.attached {
+    background-color: rgb(48, 176, 48) !important;
+    border-color: darkgreen !important;
+}
+#file-upload-label {
+    margin-left: 5px;
+}
+
+/* Typing Indicator */
+#typing-indicator {
+    display: none; /* Hidden by default */
+    margin: 10px 20px; /* Spacing around the indicator */
+    padding: 10px; /* Padding for better visual spacing */
+    border-radius: 10px; /* Rounded corners */
+    background-color: #e5e5ea; /* Background color */
+    color: #333; /* Text color */
+    font-size: 14px; /* Font size */
+    text-align: center; /* Center the text */
+}
+
+.typing-indicator .dot {
+    height: 8px;
+    width: 8px;
+    margin: 0 2px;
+    background-color: #007aff;
+    border-radius: 50%;
+    display: inline-block;
+    animation: blink 1.4s infinite both;
+}
+
+.typing-indicator .dot:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.typing-indicator .dot:nth-child(3) {
+    animation-delay: 0.4s;
+}
+
+@keyframes blink {
+    0%, 100% {
+        opacity: 0;
+    }
+    50% {
+        opacity: 1;
+    }
+}
+
+/* CSS for messages containing only images */
+.image-only {
+    margin: 5px 0;
+    text-align: center;
+    display: flex;
+    justify-content: center;
+  }
+  
+  .sent-image {
+    /* Styles for sent images */
+    align-items: flex-end;
+    justify-content: flex-end;
+  }
+  
+  .received-image {
+    /* Styles for received images */
+    align-items: flex-start;
+    justify-content: flex-start;
+  }
+  
+  .image {
+    border-radius: 25px;
+  }  

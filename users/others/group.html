@@ -3,23 +3,31 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Chat by Linos!</title>
+  <title>Group Chat by Linos!</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/3.1.9-1/crypto-js.js"></script>
   <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
   <style>
+    .material-symbols-outlined {
+      font-variation-settings:
+      'FILL' 0,
+      'wght' 400,
+      'GRAD' 0,
+      'opsz' 40
+    }
     body {
       font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
       margin: 0;
       padding: 0;
-      background-color: #000;
-      color: #ffffff; /* Default color for messages */
+      background-color: #f4f4f4;
+      color: #333; /* Default color for messages */
       transition: filter 0.5s ease-in-out; /* Transition for background blur */
     }
     
     #chat-container {
       max-width: 600px;
       margin: 50px auto;
-      border: 1px solid #2d2d2d;
+      border: 1px solid #ccc;
       border-radius: 10px;
       overflow: hidden;
     }
@@ -28,7 +36,7 @@
       height: 300px;
       overflow-y: scroll;
       padding: 10px;
-      background-color: #000000;
+      background-color: #f4f4f4;
       user-select: none;
     }
     
@@ -66,12 +74,12 @@
     }
     
     .username-input,
-    .recipient-input,
+    .group-input,
     #message-input {
       width: calc(50% - 5px);
       padding: 10px;
       border: none;
-      border-top: 1px solid #2d2d2d;
+      border-top: 1px solid #ccc;
       border-radius: 10px 10px 10px 10px;
       box-sizing: border-box;
       margin-bottom: 10px;
@@ -81,7 +89,7 @@
       width: calc(100% - 5px);
       padding: 10px;
       border: none;
-      border-top: 1px solid #2d2d2d;
+      border-top: 1px solid #ccc;
       border-radius: 10px 10px 10px 10px;
       box-sizing: border-box;
       margin-bottom: 10px;
@@ -92,8 +100,6 @@
     #message-input {
       width: calc(85%);
       border-radius: 10px 10px 10px 10px;
-      background-color: #2d2d2d;
-      color: white;
     }
     
     .hidden {
@@ -109,7 +115,7 @@
       border: none;
       color: #ffffff;
       background-color: #007aff;
-      border-top: 1px solid #2d2d2d;
+      border-top: 1px solid #ccc;
       border-radius: 10px 10px 10px 10px;
       box-sizing: border-box;
       margin-bottom: 10px;
@@ -137,7 +143,7 @@
       border: none;
       color: #ffffff;
       background-color: #198e12;
-      border-top: 1px solid #2d2d2d;
+      border-top: 1px solid #ccc;
       border-radius: 10px 10px 10px 10px;
       box-sizing: border-box;
       margin-bottom: 10px;
@@ -227,7 +233,7 @@
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%) scale(0.8);
-      background-color: black;
+      background-color: white;
       border-radius: 10px;
       padding: 20px;
       z-index: 9999;
@@ -266,15 +272,15 @@
     <div id="chat-messages"></div>
     <div class="input-container" id="input-container">
       <input type="text" class="username-input" id="username-input" placeholder="Your Name">
-      <input type="text" class="recipient-input" id="recipient-input" placeholder="Recipient">
+      <input type="text" class="group-input" id="group-input" placeholder="Group Name">
       <input type="text" id="message-input" placeholder="Type your message...">
-      <button onclick="sendMessage()" class="send-btn">Send</button>
+      <button onclick="sendMessage()" class="send-btn"><span class="material-symbols-outlined">send</span></button>
       <label for="image-input" id="file-upload-btn">
         <i class="material-icons icon">cloud_upload</i>
         <span id="file-upload-label">Upload Image</span>
       </label>
       <input type="file" accept="image/*" id="image-input" style="display: none;">
-      <button onclick="clearFile()" class="clear-btn">Clear</button> <!-- Clear button for file upload -->
+      <button onclick="clearFile()" class="clear-btn"><span class="material-symbols-outlined">delete</span></button> <!-- Clear button for file upload -->
       <button onclick="previewImage()" class="preview-btn" id="preview-btn">Preview Image</button>
     </div>
   </div>
@@ -311,32 +317,32 @@ firebase.initializeApp(firebaseConfig);
 
 const database = firebase.database();
 const storage = firebase.storage();
-const messagesRef = database.ref('dms');
+const messagesRef = database.ref('groupmessages');
 const imagesRef = storage.ref('images');
 
 const chatMessages = document.getElementById('chat-messages');
 const messageInput = document.getElementById('message-input');
 const usernameInput = document.getElementById('username-input');
-const recipientInput = document.getElementById('recipient-input');
+const groupInput = document.getElementById('group-input');
 const inputContainer = document.getElementById('input-container');
 const uploadBtn = document.getElementById('file-upload-btn');
 
 // Function to parse URL parameters
 function getURLParams() {
   const urlParams = new URLSearchParams(window.location.search);
-  const withUser = urlParams.get('with');
   const user = urlParams.get('user');
-  return { withUser, user };
+  const group = urlParams.get('group');
+  return { user, group };
 }
 
 // Function to populate input fields with URL parameters
 function populateInputs() {
-  const { withUser, user } = getURLParams();
-  if (withUser && user) {
-    recipientInput.value = withUser; // Now 'with' parameter is the recipient
-    usernameInput.value = user; // Now 'user' parameter is the sender
+  const { user, group } = getURLParams();
+  if (user && group) {
+    usernameInput.value = user; // Set the username from URL parameter
+    groupInput.value = group; // Set the group name from URL parameter
     usernameInput.classList.add('hidden');
-    recipientInput.classList.add('hidden');
+    groupInput.classList.add('hidden');
   }
 }
 
@@ -346,12 +352,11 @@ populateInputs(); // Call the function to populate inputs when the page loads
 function sendMessage() {
   const text = messageInput.value.trim();
   const sender = usernameInput.value.trim();
-  const recipient = recipientInput.value.trim();
+  const group = groupInput.value.trim();
   const imageFile = document.getElementById('image-input').files[0]; // Get the selected image file
 
-  if ((text !== '' || imageFile) && sender !== '' && recipient !== '') {
-    const key = sharedKey(sender, recipient);
-    const encryptedText = CryptoJS.AES.encrypt(text, key).toString();
+  if ((text !== '' || imageFile) && sender !== '' && group !== '') {
+    const encryptedText = CryptoJS.AES.encrypt(text, group).toString();
 
     // If there's an image file, upload it to Firebase Storage first
     if (imageFile) {
@@ -366,7 +371,7 @@ function sendMessage() {
         () => {
           // When upload is complete, get the download URL and save message to database
           uploadTask.snapshot.ref.getDownloadURL().then((downloadURL) => {
-            messagesRef.push({ sender, recipient, text: encryptedText, image: downloadURL, timestamp: firebase.database.ServerValue.TIMESTAMP });
+            messagesRef.push({ sender, group, text: encryptedText, image: downloadURL, timestamp: firebase.database.ServerValue.TIMESTAMP });
             messageInput.value = '';
             clearFile(); // Clear file input and reset upload button after sending
           });
@@ -374,7 +379,7 @@ function sendMessage() {
       );
     } else {
       // If there's no image, save only text to database
-      messagesRef.push({ sender, recipient, text: encryptedText, timestamp: firebase.database.ServerValue.TIMESTAMP });
+      messagesRef.push({ sender, group, text: encryptedText, timestamp: firebase.database.ServerValue.TIMESTAMP });
       messageInput.value = '';
     }
   }
@@ -399,14 +404,21 @@ function convertMarkdownToHTML(text) {
 }
 
 // Function to append a message to the chat window
-function appendMessage(username, text, isSent, imageUrl) {
+function appendMessage(username, text, imageUrl, isSent) {
   const messageContainer = document.getElementById('chat-messages');
 
   const messageElement = document.createElement('div');
   const messageClass = isSent ? 'sent-message' : 'received-message';
   messageElement.className = `message-bubble ${messageClass}`;
 
-  let messageContent = `<strong>${username}:</strong>`;
+  let messageContent = '';
+
+  // If the message is sent by the current user, display "You" instead of the username
+  if (isSent) {
+    messageContent += `<strong>You:</strong>`;
+  } else {
+    messageContent += `<strong>${username}:</strong>`;
+  }
 
   // Check if message contains image
   if (imageUrl) {
@@ -428,20 +440,6 @@ function appendMessage(username, text, isSent, imageUrl) {
 
   messageContainer.appendChild(messageElement);
   messageContainer.scrollTop = messageContainer.scrollHeight;
-}
-
-// Function to decrypt and append a message to the chat window
-function appendDecryptedMessage(sender, recipient, encryptedText, imageUrl) {
-  const decryptedText = CryptoJS.AES.decrypt(encryptedText, sharedKey(sender, recipient)).toString(CryptoJS.enc.Utf8);
-
-  const currentSender = usernameInput.value.trim();
-  const currentRecipient = recipientInput.value.trim();
-
-  if ((sender === currentSender && recipient === currentRecipient) || (sender === currentRecipient && recipient === currentSender)) {
-    const username = sender === currentSender ? 'You' : sender;
-    const isSent = sender === currentSender;
-    appendMessage(username, decryptedText, isSent, imageUrl);
-  }
 }
 
 // Function to generate a shared key
@@ -467,27 +465,28 @@ document.getElementById('message-input').addEventListener('keydown', function(ev
 // Function to handle the child added event for Firebase
 messagesRef.on('child_added', (snapshot) => {
   const message = snapshot.val();
-  appendDecryptedMessage(message.sender, message.recipient, message.text, message.image);
+  appendDecryptedMessage(message.sender, message.group, message.text, message.image);
 });
+
+// Function to decrypt and append a message to the chat window
+function appendDecryptedMessage(sender, group, encryptedText, imageUrl) {
+  const decryptedText = CryptoJS.AES.decrypt(encryptedText, group).toString(CryptoJS.enc.Utf8);
+
+  const currentSender = usernameInput.value.trim();
+  const currentGroup = groupInput.value.trim();
+
+  // Only append messages when the group matches the current group
+  if (group === currentGroup) {
+    appendMessage(sender, decryptedText, imageUrl, sender === currentSender); // Set isSent based on comparison
+  }
+}
+
 
 let uploadCount = 0; // Initialize a counter for uploaded files
 
 // Event listener for file input change
 document.getElementById('image-input').addEventListener('change', function() {
   const fileInput = this.files[0];
-  if (fileInput) {
-    uploadBtn.classList.add('attached');
-    uploadBtn.innerHTML = 'Uploaded!';
-  } else {
-    uploadBtn.classList.remove('attached');
-    uploadBtn.innerHTML = `
-      <i class="material-icons icon">cloud_upload</i>
-      <span id="file-upload-label">Upload Image</span>
-    `;
-  }
-});
-
-  // Rename the file to append a unique number
   if (fileInput) {
     const fileName = fileInput.name;
     const fileExt = fileName.split('.').pop(); // Get the file extension
@@ -502,6 +501,11 @@ document.getElementById('image-input').addEventListener('change', function() {
     // Replace the file input with the renamed file
     this.files[0] = renamedFile;
 
+    // Update button text to "Uploaded"
+    const uploadBtn = document.getElementById('file-upload-btn');
+    uploadBtn.classList.add('attached');
+    uploadBtn.innerHTML = 'Uploaded!';
+
     // Upload the renamed file to Firebase Storage
     const uploadTask = imagesRef.child(newFileName).put(renamedFile);
     uploadTask.on('state_changed',
@@ -512,27 +516,29 @@ document.getElementById('image-input').addEventListener('change', function() {
         console.error('Error uploading image:', error);
       },
       () => {
-        // When upload is complete, reset file input and upload button
-        clearFile();
+        // When upload is complete, get the download URL and save message to database
+        uploadTask.snapshot.ref.getDownloadURL().then((downloadURL) => {
+          // Once the download URL is obtained, you can use it to display the image or send it in a message
+          console.log('Image uploaded. Download URL:', downloadURL);
+        });
       }
     );
   }
+});
 
 // Function to clear the file input and reset the upload button
 function clearFile() {
   const fileInput = document.getElementById('image-input');
   fileInput.value = ''; // Clear the file input
-  // Only remove the 'attached' class and reset the button text if the upload button has 'attached' class
-  if (uploadBtn.classList.contains('attached')) {
-    uploadBtn.classList.remove('attached');
-    uploadBtn.innerHTML = `
-      <i class="material-icons icon">cloud_upload</i>
-      <span id="file-upload-label">Upload Image</span>
-    `;
-  }
+  // Reset the upload button even if there's no image selected
+  const uploadBtn = document.getElementById('file-upload-btn');
+  uploadBtn.classList.remove('attached');
+  uploadBtn.innerHTML = `
+    <i class="material-icons icon">cloud_upload</i>
+    <span id="file-upload-label">Upload Image</span>
+  `;
 }
 
-// Function to preview the selected image
 // Function to preview the selected image
 function previewImage() {
   const fileInput = document.getElementById('image-input');
@@ -559,7 +565,6 @@ function closePreview() {
   document.getElementById('blur-overlay').classList.remove('blurred'); // Remove blur effect from overlay
 }
 
-
 // Event listeners for the preview and close buttons
 document.getElementById('preview-btn').addEventListener('click', previewImage);
 document.getElementById('close-preview-btn').addEventListener('click', closePreview);
@@ -570,6 +575,6 @@ document.getElementById('preview-popup').addEventListener('click', (event) => {
     closePreview();
   }
 });
-</script>
+  </script>
 </body>
 </html>

@@ -1,0 +1,256 @@
+.material-symbols-outlined {
+    font-variation-settings:
+    'FILL' 0,
+    'wght' 400,
+    'GRAD' 0,
+    'opsz' 40
+  }
+  body {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f4f4f4;
+    color: #333; /* Default color for messages */
+    transition: filter 0.5s ease-in-out; /* Transition for background blur */
+  }
+  
+  #chat-container {
+    max-width: 600px;
+    margin: 50px auto;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  
+  #chat-messages {
+    height: 300px;
+    overflow-y: scroll;
+    padding: 10px;
+    background-color: #f4f4f4;
+    user-select: none;
+  }
+  
+  .message-container {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .message-bubble {
+    max-width: 100%;
+    padding: 10px;
+    border-radius: 15px;
+    margin-bottom: 10px;
+    word-wrap: break-word; /* Ensures long text wraps within the message box */
+  }
+  
+  .sent-message {
+    background-color: #007aff;
+    color: #fff;
+    align-self: flex-end;
+  }
+  
+  .received-message {
+    background-color: #e5e5ea;
+    color: #333; /* Use default color for received messages */
+    align-self: flex-start;
+  }
+  
+  .input-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+  }
+  
+  .username-input,
+  .recipient-input,
+  #message-input {
+    width: calc(50% - 5px);
+    padding: 10px;
+    border: none;
+    border-top: 1px solid #ccc;
+    border-radius: 10px 10px 10px 10px;
+    box-sizing: border-box;
+    margin-bottom: 10px;
+  }
+  
+  #image-input {
+    width: calc(100% - 5px);
+    padding: 10px;
+    border: none;
+    border-top: 1px solid #ccc;
+    border-radius: 10px 10px 10px 10px;
+    box-sizing: border-box;
+    margin-bottom: 10px;
+    background-color: #fff;
+    color: black;
+  }
+  
+  #message-input {
+    width: calc(85%);
+    border-radius: 10px 10px 10px 10px;
+  }
+  
+  .hidden {
+    display: none;
+  }
+  
+  .send-btn,
+  #file-upload-btn,
+  .clear-btn,
+  #preview-btn {
+    width: calc(15% - 5px);
+    padding: 10px;
+    border: none;
+    color: #ffffff;
+    background-color: #007aff;
+    border-top: 1px solid #ccc;
+    border-radius: 10px 10px 10px 10px;
+    box-sizing: border-box;
+    margin-bottom: 10px;
+    cursor: pointer;
+    display: flex; /* Make them flex containers */
+    justify-content: center; /* Align text horizontally in the center */
+    align-items: center; /* Align text vertically in the center */
+    height: 35px; /* Set the height to match other buttons */
+  }
+  
+  #info-container {
+    max-width: 600px;
+    margin: 0 auto;
+    overflow: hidden;
+  }
+  
+  .file-upload-container {
+    display: flex;
+    align-items: center;
+  }
+  
+  #file-upload-btn {
+    width: calc(85%);
+    padding: 10px;
+    border: none;
+    color: #ffffff;
+    background-color: #198e12;
+    border-top: 1px solid #ccc;
+    border-radius: 10px 10px 10px 10px;
+    box-sizing: border-box;
+    margin-bottom: 10px;
+    cursor: pointer;
+  }
+  
+  #file-upload-btn:hover {
+    background-color: #B2e6c5;
+  }
+  
+  .send-btn:hover,
+  #preview-btn:hover,
+  .clear-btn:hover {
+    background-color: #5eacff;
+  }
+  
+  #preview-btn {
+    width: calc(100%);
+    font-size: 16px;
+  }
+  
+  #file-upload-btn .icon {
+    margin-right: 5px;
+    vertical-align: middle;
+  }
+  
+  #file-upload-btn span {
+    font-size: 16px;
+    vertical-align: middle;
+  }
+  
+  .attached {
+    background-color: rgb(48, 176, 48) !important;
+    border-color: darkgreen !important;
+  }
+  
+  .file-upload-container {
+    text-align: center;
+    align-items: center;
+  }
+  
+  .clear-btn {
+    padding: 10px;
+    border: none;
+    background-color: #ff3333;
+    color: #fff;
+    border-radius: 10px;
+    cursor: pointer;
+    display: flex;
+    justify-content: center; /* Align text horizontally in the center */
+    align-items: center; /* Align text vertically in the center */
+    width: calc(15% - 5px); /* Adjust width to match other buttons */
+    margin-bottom: 10px;
+  }
+  
+  .clear-btn:hover {
+    background-color: #ff6666;
+  }
+  
+  .material-icons {
+    font-family: 'Material Icons';
+    font-weight: normal;
+    font-style: normal;
+    font-size: 18px;  /* Preferred icon size */
+    display: inline-block;
+    line-height: 1;
+    text-transform: none;
+    letter-spacing: normal;
+    word-wrap: normal;
+    white-space: nowrap;
+    direction: ltr;
+  
+    /* Support for all WebKit browsers. */
+    -webkit-font-smoothing: antialiased;
+    /* Support for Safari and Chrome. */
+    text-rendering: optimizeLegibility;
+  
+    /* Support for Firefox. */
+    -moz-osx-font-smoothing: grayscale;
+  
+    /* Support for IE. */
+    font-feature-settings: 'liga';
+  }
+  
+  .preview-popup {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.8);
+    background-color: white;
+    border-radius: 10px;
+    padding: 20px;
+    z-index: 9999;
+    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.5);
+    opacity: 0;
+    transition: transform 0.5s ease-in-out, opacity 0.5s ease-in-out;
+  }
+  
+  .preview-popup.visible {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+  
+  .close-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    cursor: pointer;
+  }
+  #blur-overlay {
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 9998; /* Ensure the overlay is behind the preview popup */
+  }
+  
+  #blur-overlay.blurred {
+  filter: blur(5px); /* Keep the blur effect when added */
+  }  
