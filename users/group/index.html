@@ -1,23 +1,20 @@
-<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Chat</title>
+  <title>Group Chat by Linos!</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/3.1.9-1/crypto-js.js"></script>
   <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="https://chat.linosh.com/users/styles.css">
 </head>
 <body>
-  <br>
   <div id="blur-overlay">
   <div id="chat-container">
     <div id="chat-messages"></div>
-      <div id="typing-indicator" style="display: none;"></div> <!-- Typing indicator message container -->
     <div class="input-container" id="input-container">
       <input type="text" class="username-input" id="username-input" placeholder="Your Name">
-      <input type="text" class="recipient-input" id="recipient-input" placeholder="Recipient">
+      <input type="text" class="username-input" id="group-input" placeholder="Group Name">
       <input type="text" id="message-input" placeholder="Type your message...">
       <button onclick="sendMessage()" class="send-btn"><span class="material-symbols-outlined">send</span></button>
       <label for="image-input" id="file-upload-btn">
@@ -33,7 +30,7 @@
     <p style="text-align:center">Paste an image link, or upload an image.</p>
     <hr>
     <h3 style="text-align:center">Formatting</h3>
-    <p style="text-align:center">You can use <a href="https://www.markdownguide.org/basic-syntax/" target="_blank">Markdown Basic Syntax</a>.</p>
+    <p style="text-align:center">You can use <a href="https://www.markdownguide.org/cheat-sheet/" target="_blank">Markdown Basic Syntax</a>.</p>
   </div>
 </div>
   <!-- Preview popup -->
@@ -46,6 +43,6 @@
   <script src="https://www.gstatic.com/firebasejs/8.2.2/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.2.2/firebase-database.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.2.2/firebase-storage.js"></script>
-  <script src="https://chat.linosh.com/users/script.js"></script>
+  <script src="script.js"></script>
 </body>
 </html>

@@ -64,7 +64,10 @@ body {
     flex-wrap: wrap;
     justify-content: space-between; /* Align items with space between */
     align-items: center;
-    padding: 15px; /* More padding for the input area */
+    padding-top: 15px; /* More padding for the input area */
+    padding-left: 15px; /* More padding for the input area */
+    padding-right: 15px; /* More padding for the input area */
+    padding-bottom: 10px; /* More padding for the input area */
     border-top: 1px solid #e1e1e1; /* Lighter border */
 }
 
@@ -72,7 +75,7 @@ body {
 .username-input,
 .recipient-input,
 #message-input {
-    width: calc(50% - 5px); /* Adjust spacing */
+    width: calc(50% - 3px); /* Adjust spacing */
     padding: 12px;
     border: 1px solid #e1e1e1; /* Subtle border */
     border-radius: 12px; /* Rounded corners for inputs */
@@ -116,7 +119,7 @@ body {
 }
 
 #file-upload-btn {
-    width: calc(100%); /* Full width for file upload button */
+    width: calc(85% - 3px); /* Full width for file upload button */
     background-color: #198e12;
     margin-bottom: 10px; /* Spacing between file upload and other buttons */
 }
@@ -134,10 +137,13 @@ body {
 #preview-btn {
     width: calc(85% - 3px); /* Full width for preview button */
     font-size: 16px; /* Ensure consistency */
+    padding-bottom: 0px;
 }
 
 .clear-btn {
     background-color: #ff3333;
+    padding-bottom: 0px;
+    margin-left: 8px
 }
 
 .clear-btn:hover {

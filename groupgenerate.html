@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat By Linos Link Generator (for groups!)</title>
+    <title>Chat Link Generator (for groups!)</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -102,16 +102,7 @@
         <div class="link-container" id="linkContainer"></div>
         <hr>
         <p><strong>OR</strong></p>
-        <a href="users/group.html" class="button">Go To Site (Enter Usernames There)</a>
-        <p></p>
-        <hr>
-        <p></p>
-        <a href="/" class="button">Generate A DM Link</a>
-        <br>
-        <p></p>
-        <hr>
-        <p></p>
-        <a href="https://forms.microsoft.com/r/c5wyXzzqE4" class="button" target="_blank">Give Feedback</a>
+        <a href="https://chat.linos.space/" class="button">Generate A DM Link</a>
     </div>
 
     <script>
@@ -145,13 +136,13 @@
         function generateLink() {
             var sender = document.getElementById('sender').value.trim();
             var groupname = document.getElementById('groupname').value.trim();
-            var darkMode = document.getElementById('darkModeToggle').checked ? 'groupdark.html' : 'group.html';
+            var darkMode = document.getElementById('darkModeToggle').checked ? 'group/dark.html' : 'group';
 
             if (sender === '' || groupname === '') {
                 alert('Please enter both sender and group name.');
                 return;
             }
-            var link1 = `https://chat.linosh.com/users/${darkMode}?group=${groupname}&user=${sender}`;
+            var link1 = `https://chat.linos.space/users/${darkMode}?group=${groupname}&user=${sender}`;
             var linkContainer = document.getElementById('linkContainer');
             linkContainer.innerHTML = `
                 <p>Your Link: <a href="${link1}" target="_blank">${link1}</a></p>`;

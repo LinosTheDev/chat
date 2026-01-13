@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat By Linos Link Generator</title>
+    <title>Chat Link Generator</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -99,19 +99,11 @@
             <div class="toggle" onclick="toggleDarkMode()"></div>
             <button onclick="generateLink()" class="button">Generate Link</button>
         </div>
-        <div class="link-container" id="linkContainer"></div>
-        <hr>
+        <div class="link-container" id="linkContainer">
+                    <hr>
         <p><strong>OR</strong></p>
-        <a href="users" class="button">Go To Site (Enter Usernames There)</a>
-        <p></p>
-        <hr>
-        <p></p>
-        <a href="groupgenerate.html" class="button">Generate A Group Link</a>
-        <br>
-        <p></p>
-        <hr>
-        <p></p>
-        <a href="https://forms.microsoft.com/r/c5wyXzzqE4" class="button" target="_blank">Give Feedback</a>
+        <a href="https://chat.linos.space/groupgenerate.html" class="button">Generate A Group Chat Link</a>
+        </div>
     </div>
 
     <script>
@@ -134,15 +126,15 @@
         function generateLink() {
             var sender = document.getElementById('sender').value.trim();
             var recipient = document.getElementById('recipient').value.trim();
-            var darkMode = document.getElementById('darkModeToggle').checked ? 'dark.html' : '';
+            var darkMode = document.getElementById('darkModeToggle').checked ? 'dark/' : '';
 
             if (sender === '' || recipient === '') {
                 alert('Please enter both sender and recipient.');
                 return;
             }
 
-            var link1 = `https://chat.linosh.com/users/${darkMode}?with=${recipient}&user=${sender}`;
-            var link2 = `https://chat.linosh.com/users/${darkMode}?with=${sender}&user=${recipient}`;
+            var link1 = `https://chat.linos.space/users/${darkMode}?with=${recipient}&user=${sender}`;
+            var link2 = `https://chat.linos.space/users/${darkMode}?with=${sender}&user=${recipient}`;
 
             var linkContainer = document.getElementById('linkContainer');
             linkContainer.innerHTML = `
