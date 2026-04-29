@@ -10,39 +10,88 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <br>
   <div id="blur-overlay">
-  <div id="chat-container">
-    <div id="chat-messages"></div>
-      <div id="typing-indicator" style="display: none;"></div> <!-- Typing indicator message container -->
-    <div class="input-container" id="input-container">
-      <input type="text" class="username-input" id="username-input" placeholder="Your Name">
-      <input type="text" class="recipient-input" id="recipient-input" placeholder="Recipient">
-      <input type="text" id="message-input" placeholder="Type your message...">
-      <button onclick="sendMessage()" class="send-btn"><span class="material-symbols-outlined">send</span></button>
-      <label for="image-input" id="file-upload-btn">
-        <i class="material-icons icon">cloud_upload</i>
-        <span id="file-upload-label">Upload Image</span>
+    <div id="chat-container">
+      <div id="chat-header">
+        <span id="chat-recipient-name"></span>
+        <div id="typing-indicator">
+          <div class="typing-dot"></div>
+          <div class="typing-dot"></div>
+          <div class="typing-dot"></div>
+        </div>
+      </div>
+      <div id="chat-messages"></div>
+      <div id="image-preview-bar"></div>
+      <div id="reply-preview-bar" class="hidden">
+        <div id="reply-preview-content">
+          <span id="reply-preview-name"></span>
+          <span id="reply-preview-text"></span>
+        </div>
+        <button id="reply-preview-close" class="icon-btn"><span class="material-symbols-outlined">close</span></button>
+      </div>
+      <div class="input-container" id="input-container">
+        <input type="text" class="username-input" id="username-input" placeholder="Your Name">
+        <input type="text" class="recipient-input" id="recipient-input" placeholder="Recipient">
+        <div id="message-row">
+          <button id="emoji-btn" class="icon-btn" title="Emoji"><span class="material-symbols-outlined">mood</span></button>
+          <button id="gif-btn" class="icon-btn" title="GIF"><span class="material-symbols-outlined">gif</span></button>
+          <label for="image-input" id="image-upload-btn" class="icon-btn" title="Upload Image">
+            <span class="material-symbols-outlined">image</span>
+          </label>
+          <input type="file" accept="image/*" id="image-input" style="display: none;">
+          <input type="text" id="message-input" placeholder="Type your message...">
+          <button id="send-btn" class="send-btn"><span class="material-symbols-outlined">send</span></button>
+        </div>
+      </div>
+    </div>
+    <div id="info-container">
+      <label id="ephemeral-toggle">
+        <input type="checkbox" id="ephemeral-checkbox"> Messages disappear on refresh
       </label>
-      <input type="file" accept="image/*" id="image-input" style="display: none;">
-      <button onclick="clearFile()" class="clear-btn"><span class="material-symbols-outlined">delete</span></button> <!-- Clear button for file upload -->
+      <hr>
+      <h3>Formatting</h3>
+      <p>You can use <a href="https://www.markdownguide.org/basic-syntax/" target="_blank">Markdown Basic Syntax</a>.</p>
     </div>
   </div>
-  <div id="info-container">
-    <h3 style="text-align:center">How to send images</h3>
-    <p style="text-align:center">Paste an image link, or upload an image.</p>
-    <hr>
-    <h3 style="text-align:center">Formatting</h3>
-    <p style="text-align:center">You can use <a href="https://www.markdownguide.org/basic-syntax/" target="_blank">Markdown Basic Syntax</a>.</p>
+
+  <!-- Emoji Picker -->
+  <div id="emoji-picker" class="picker-panel hidden">
+    <div id="emoji-search-bar">
+      <input type="text" id="emoji-search" placeholder="Search emoji...">
+    </div>
+    <div id="emoji-grid"></div>
   </div>
-</div>
-  <!-- Preview popup -->
+
+  <!-- GIF Picker -->
+  <div id="gif-picker" class="picker-panel hidden">
+    <div id="gif-search-bar">
+      <input type="text" id="gif-search" placeholder="Search GIFs...">
+    </div>
+    <div id="gif-grid"></div>
+    <div id="gif-powered">Powered by GIPHY</div>
+  </div>
+
+  <!-- Reaction Picker -->
+  <div id="reaction-picker" class="hidden">
+    <div id="reaction-grid"></div>
+  </div>
+
+  <!-- Image Preview Popup -->
   <div id="preview-popup" class="preview-popup">
-    <img id="popup-image" style="max-width: 100%; max-height: 100%;" />
-    <div class="close-btn" id="close-preview-btn" onclick="closePreview()">
+    <img id="popup-image" />
+    <div class="close-btn" id="close-preview-btn">
       <i class="material-icons">close</i>
     </div>
   </div>
+
+  <!-- Upload Progress Overlay -->
+  <div id="upload-overlay" class="hidden">
+    <div id="upload-progress-container">
+      <div id="upload-progress-bar"></div>
+      <span id="upload-progress-text">Uploading...</span>
+    </div>
+  </div>
+
   <script src="https://www.gstatic.com/firebasejs/8.2.2/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.2.2/firebase-database.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.2.2/firebase-storage.js"></script>
