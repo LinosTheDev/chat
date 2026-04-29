@@ -61,36 +61,6 @@ let replyToSender = null;
 let replyToText = null;
 let activeReactionMsgKey = null;
 const messageKeyMap = new Map();
-let pageVisible = true;
-// --- Browser push notifications ---
-function requestNotificationPermission() {
-  if (!('Notification' in window)) return;
-  if (Notification.permission === 'default') {
-    Notification.requestPermission();
-  }
-}
-requestNotificationPermission();
-
-function sendBrowserNotification(sender, text) {
-  if (!('Notification' in window) || Notification.permission !== 'granted') return;
-  if (pageVisible) return;
-  const preview = text.length > 80 ? text.substring(0, 80) + '...' : text;
-  const notif = new Notification(`${sender} sent a message`, {
-    body: preview,
-    icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">💬</text></svg>',
-    tag: 'chat-message'
-  });
-  notif.onclick = () => {
-    window.focus();
-    notif.close();
-  };
-}
-
-document.addEventListener('visibilitychange', () => {
-  pageVisible = !document.hidden;
-});
-
-let initialLoadDone = false;
 
 // --- Browser push notifications ---
 function requestNotificationPermission() {
@@ -244,7 +214,6 @@ function showReactionPicker(msgKey, anchorEl) {
     });
     reactionGrid.appendChild(span);
   });
-  // "+" button to open full emoji picker for reaction
   const moreBtn = document.createElement('span');
   moreBtn.className = 'reaction-item reaction-more';
   moreBtn.innerHTML = '<span class="material-symbols-outlined" style="font-size:16px">add</span>';
@@ -327,7 +296,6 @@ function renderReactionsOnBubble(msgKey, reactions) {
     bubble.appendChild(container);
   }
 
-  // Aggregate reactions: { emoji: [users] }
   const aggregated = {};
   Object.entries(reactions).forEach(([user, emoji]) => {
     if (!aggregated[emoji]) aggregated[emoji] = [];
@@ -355,27 +323,23 @@ document.addEventListener('click', (e) => {
 
 // --- Markdown ---
 function convertMarkdownToHTML(text) {
-  // Protect code blocks from URL conversion
   const codeBlocks = [];
   text = text.replace(/`(.*?)`/g, (_, code) => {
     codeBlocks.push(code);
     return `\x00CODE${codeBlocks.length - 1}\x00`;
   });
 
-  // Convert URLs to clickable links
   text = text.replace(/(https?:\/\/[^\s<\x00]+)/g, (url) => {
     const href = url.replace(/[.,;:!?)\]]+$/, '');
     return `<a href="${href}" target="_blank" rel="noopener noreferrer" style="color:inherit;text-decoration:underline">${href}</a>`;
   });
 
-  // Markdown formatting
   text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
   text = text.replace(/__(.*?)__/g, '<strong>$1</strong>');
   text = text.replace(/\*(.*?)\*/g, '<em>$1</em>');
   text = text.replace(/_(.*?)_/g, '<em>$1</em>');
   text = text.replace(/~~(.*?)~~/g, '<del>$1</del>');
 
-  // Restore code blocks
   text = text.replace(/\x00CODE(\d+)\x00/g, (_, i) => `<code>${codeBlocks[i]}</code>`);
 
   return text;
@@ -402,7 +366,7 @@ function appendMessage(username, text, isSent, imageUrl, isGif, msgKey, replyTo)
   if (replyTo) {
     const quote = document.createElement('div');
     quote.className = 'reply-quote';
-    quote.innerHTML = `<span class="reply-quote-name">${replyTo.sender || ''}</span><span class="reply-quote-text">${convertMarkdownToHTML((replyTo.text || '').substring(0, 80))}</span>`;
+    quote.innerHTML = `<span class="reply-quote-name">${replyTo.replyToSender || ''}</span><span class="reply-quote-text">${convertMarkdownToHTML((replyTo.replyToText || '').substring(0, 80))}</span>`;
     el.appendChild(quote);
   }
 
@@ -571,23 +535,7 @@ function showImagePreviewBar(src, name) {
 
 function clearPendingImage() {
   pendingImageFile = null;
-  const curSender = usernameInput.value.trim();
-  const curRecipient = recipientInput.value.trim();
-
-  const isRelevant = (msg.sender === curSender && msg.recipient === curRecipient) ||
-                     (msg.sender === curRecipient && msg.recipient === curSender);
-  const isIncoming = msg.sender === curRecipient;
-
-  if (isRelevant && isIncoming && initialLoadDone) {
-    const decrypted = CryptoJS.AES.decrypt(msg.text, sharedKey(msg.sender, msg.recipient)).toString(CryptoJS.enc.Utf8);
-    sendBrowserNotification(msg.sender, decrypted || (msg.image ? 'Sent an image' : 'Sent a message'));
-  }
-
   pendingImageURL = null;
-
-  if (!initialLoadDone) {
-    setTimeout(() => { initialLoadDone = true; }, 1500);
-  }
   imageInput.value = '';
   imagePreviewBar.classList.remove('active');
   imagePreviewBar.innerHTML = '';
@@ -621,7 +569,6 @@ messagesRef.on('child_added', (snapshot) => {
   const curSender = usernameInput.value.trim();
   const curRecipient = recipientInput.value.trim();
 
-  // Skip initial historical messages for notifications
   const isRelevant = (msg.sender === curSender && msg.recipient === curRecipient) ||
                      (msg.sender === curRecipient && msg.recipient === curSender);
   const isIncoming = msg.sender === curRecipient;
@@ -633,7 +580,6 @@ messagesRef.on('child_added', (snapshot) => {
 
   appendDecryptedMessage(msg.sender, msg.recipient, msg.text, msg.image, msg.isGif, msgKey, msg.replyTo || null);
 
-  // Mark initial load as done after a short delay to skip historical messages
   if (!initialLoadDone) {
     setTimeout(() => { initialLoadDone = true; }, 1500);
   }
