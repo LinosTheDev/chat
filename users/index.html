@@ -22,6 +22,13 @@
       </div>
       <div id="chat-messages"></div>
       <div id="image-preview-bar"></div>
+      <div id="reply-preview-bar" class="hidden">
+        <div id="reply-preview-content">
+          <span id="reply-preview-name"></span>
+          <span id="reply-preview-text"></span>
+        </div>
+        <button id="reply-preview-close" class="icon-btn"><span class="material-symbols-outlined">close</span></button>
+      </div>
       <div class="input-container" id="input-container">
         <input type="text" class="username-input" id="username-input" placeholder="Your Name">
         <input type="text" class="recipient-input" id="recipient-input" placeholder="Recipient">
@@ -62,6 +69,11 @@
     </div>
     <div id="gif-grid"></div>
     <div id="gif-powered">Powered by GIPHY</div>
+  </div>
+
+  <!-- Reaction Picker -->
+  <div id="reaction-picker" class="hidden">
+    <div id="reaction-grid"></div>
   </div>
 
   <!-- Image Preview Popup -->

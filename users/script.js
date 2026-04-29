@@ -43,6 +43,12 @@ const imagePreviewBar = document.getElementById('image-preview-bar');
 const ephemeralCheckbox = document.getElementById('ephemeral-checkbox');
 const typingIndicator = document.getElementById('typing-indicator');
 const chatRecipientName = document.getElementById('chat-recipient-name');
+const replyPreviewBar = document.getElementById('reply-preview-bar');
+const replyPreviewName = document.getElementById('reply-preview-name');
+const replyPreviewText = document.getElementById('reply-preview-text');
+const replyPreviewClose = document.getElementById('reply-preview-close');
+const reactionPicker = document.getElementById('reaction-picker');
+const reactionGrid = document.getElementById('reaction-grid');
 
 let pendingImageFile = null;
 let pendingImageURL = null;
@@ -50,6 +56,11 @@ let gifSearchTimeout = null;
 let activePicker = null;
 let pageVisible = true;
 let initialLoadDone = false;
+let replyToKey = null;
+let replyToSender = null;
+let replyToText = null;
+let activeReactionMsgKey = null;
+const messageKeyMap = new Map();
 let pageVisible = true;
 // --- Browser push notifications ---
 function requestNotificationPermission() {
@@ -191,6 +202,157 @@ function sharedKey(sender, recipient) {
   return `${sender}-${recipient}-shared-key`;
 }
 
+// --- Quick reaction emojis ---
+const QUICK_REACTIONS = ['👍','❤️','😂','😮','😢','🎉'];
+
+// --- Reply helpers ---
+function setReplyTo(msgKey, sender, text) {
+  replyToKey = msgKey;
+  replyToSender = sender;
+  replyToText = text;
+  replyPreviewName.textContent = sender;
+  replyPreviewText.textContent = text.length > 60 ? text.substring(0, 60) + '...' : text;
+  replyPreviewBar.classList.remove('hidden');
+  messageInput.focus();
+}
+
+function clearReply() {
+  replyToKey = null;
+  replyToSender = null;
+  replyToText = null;
+  replyPreviewBar.classList.add('hidden');
+}
+
+replyPreviewClose.addEventListener('click', clearReply);
+
+// --- Reaction helpers ---
+function showReactionPicker(msgKey, anchorEl) {
+  if (activeReactionMsgKey === msgKey) {
+    hideReactionPicker();
+    return;
+  }
+  activeReactionMsgKey = msgKey;
+  reactionGrid.innerHTML = '';
+  QUICK_REACTIONS.forEach(emoji => {
+    const span = document.createElement('span');
+    span.className = 'reaction-item';
+    span.textContent = emoji;
+    span.addEventListener('click', (e) => {
+      e.stopPropagation();
+      addReaction(msgKey, emoji);
+      hideReactionPicker();
+    });
+    reactionGrid.appendChild(span);
+  });
+  // "+" button to open full emoji picker for reaction
+  const moreBtn = document.createElement('span');
+  moreBtn.className = 'reaction-item reaction-more';
+  moreBtn.innerHTML = '<span class="material-symbols-outlined" style="font-size:16px">add</span>';
+  moreBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    showFullReactionPicker(msgKey);
+  });
+  reactionGrid.appendChild(moreBtn);
+
+  const rect = anchorEl.getBoundingClientRect();
+  reactionPicker.style.top = `${rect.top - 44}px`;
+  reactionPicker.style.left = `${Math.min(rect.left + 10, window.innerWidth - 280)}px`;
+  reactionPicker.classList.remove('hidden');
+}
+
+function hideReactionPicker() {
+  activeReactionMsgKey = null;
+  reactionPicker.classList.add('hidden');
+}
+
+function showFullReactionPicker(msgKey) {
+  hideReactionPicker();
+  const panel = document.createElement('div');
+  panel.className = 'full-reaction-panel';
+  panel.innerHTML = `
+    <div class="full-reaction-header">
+      <span>Pick a reaction</span>
+      <button class="icon-btn full-reaction-close"><span class="material-symbols-outlined">close</span></button>
+    </div>
+    <div class="full-reaction-grid"></div>
+  `;
+  document.body.appendChild(panel);
+
+  const grid = panel.querySelector('.full-reaction-grid');
+  EMOJI_LIST.forEach(emoji => {
+    const span = document.createElement('span');
+    span.className = 'emoji-item';
+    span.textContent = emoji;
+    span.addEventListener('click', () => {
+      addReaction(msgKey, emoji);
+      panel.remove();
+    });
+    grid.appendChild(span);
+  });
+
+  panel.querySelector('.full-reaction-close').addEventListener('click', () => panel.remove());
+  panel.addEventListener('click', (e) => { if (e.target === panel) panel.remove(); });
+}
+
+function addReaction(msgKey, emoji) {
+  const curUser = usernameInput.value.trim();
+  if (!curUser) return;
+  const reactionRef = database.ref('reactions').child(msgKey).child(curUser);
+  reactionRef.once('value', (snap) => {
+    if (snap.val() === emoji) {
+      reactionRef.remove();
+    } else {
+      reactionRef.set(emoji);
+    }
+  });
+}
+
+// Listen for reaction changes
+database.ref('reactions').on('value', (snapshot) => {
+  snapshot.forEach((msgSnap) => {
+    const msgKey = msgSnap.key;
+    const reactions = msgSnap.val();
+    renderReactionsOnBubble(msgKey, reactions);
+  });
+});
+
+function renderReactionsOnBubble(msgKey, reactions) {
+  const bubble = messageKeyMap.get(msgKey);
+  if (!bubble) return;
+
+  let container = bubble.querySelector('.reactions-container');
+  if (!container) {
+    container = document.createElement('div');
+    container.className = 'reactions-container';
+    bubble.appendChild(container);
+  }
+
+  // Aggregate reactions: { emoji: [users] }
+  const aggregated = {};
+  Object.entries(reactions).forEach(([user, emoji]) => {
+    if (!aggregated[emoji]) aggregated[emoji] = [];
+    aggregated[emoji].push(user);
+  });
+
+  container.innerHTML = '';
+  const curUser = usernameInput.value.trim();
+  Object.entries(aggregated).forEach(([emoji, users]) => {
+    const badge = document.createElement('span');
+    badge.className = 'reaction-badge' + (users.includes(curUser) ? ' own-reaction' : '');
+    badge.innerHTML = `${emoji} <span class="reaction-count">${users.length}</span>`;
+    badge.title = users.join(', ');
+    badge.addEventListener('click', () => addReaction(msgKey, emoji));
+    container.appendChild(badge);
+  });
+}
+
+// Close reaction picker on outside click
+document.addEventListener('click', (e) => {
+  if (!reactionPicker.contains(e.target) && !e.target.closest('.msg-action-react')) {
+    hideReactionPicker();
+  }
+});
+
 // --- Markdown ---
 function convertMarkdownToHTML(text) {
   // Protect code blocks from URL conversion
@@ -220,15 +382,28 @@ function convertMarkdownToHTML(text) {
 }
 
 // --- Append message ---
-function appendMessage(username, text, isSent, imageUrl, isGif) {
+function appendMessage(username, text, isSent, imageUrl, isGif, msgKey, replyTo) {
   const el = document.createElement('div');
   el.className = `message-bubble ${isSent ? 'sent-message' : 'received-message'}`;
+
+  if (msgKey) {
+    messageKeyMap.set(msgKey, el);
+    el.dataset.msgKey = msgKey;
+  }
 
   if (!isSent && username !== 'You') {
     const nameEl = document.createElement('div');
     nameEl.className = 'sender-name';
     nameEl.textContent = username;
     el.appendChild(nameEl);
+  }
+
+  // Quoted reply preview
+  if (replyTo) {
+    const quote = document.createElement('div');
+    quote.className = 'reply-quote';
+    quote.innerHTML = `<span class="reply-quote-name">${replyTo.sender || ''}</span><span class="reply-quote-text">${convertMarkdownToHTML((replyTo.text || '').substring(0, 80))}</span>`;
+    el.appendChild(quote);
   }
 
   if (imageUrl) {
@@ -249,11 +424,34 @@ function appendMessage(username, text, isSent, imageUrl, isGif) {
     el.appendChild(textEl);
   }
 
+  // Action buttons (reply + react)
+  const actions = document.createElement('div');
+  actions.className = 'msg-actions';
+  const replyBtn = document.createElement('button');
+  replyBtn.className = 'msg-action-btn msg-action-reply';
+  replyBtn.innerHTML = '<span class="material-symbols-outlined">reply</span>';
+  replyBtn.title = 'Reply';
+  replyBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    setReplyTo(msgKey, username, text || (imageUrl ? 'Image' : 'Message'));
+  });
+  const reactBtn = document.createElement('button');
+  reactBtn.className = 'msg-action-btn msg-action-react';
+  reactBtn.innerHTML = '<span class="material-symbols-outlined">add_reaction</span>';
+  reactBtn.title = 'React';
+  reactBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    showReactionPicker(msgKey, el);
+  });
+  actions.appendChild(replyBtn);
+  actions.appendChild(reactBtn);
+  el.appendChild(actions);
+
   chatMessages.appendChild(el);
   chatMessages.scrollTop = chatMessages.scrollHeight;
 }
 
-function appendDecryptedMessage(sender, recipient, encryptedText, imageUrl, isGif) {
+function appendDecryptedMessage(sender, recipient, encryptedText, imageUrl, isGif, msgKey, replyTo) {
   const decrypted = CryptoJS.AES.decrypt(encryptedText, sharedKey(sender, recipient)).toString(CryptoJS.enc.Utf8);
   const curSender = usernameInput.value.trim();
   const curRecipient = recipientInput.value.trim();
@@ -261,7 +459,7 @@ function appendDecryptedMessage(sender, recipient, encryptedText, imageUrl, isGi
   if ((sender === curSender && recipient === curRecipient) || (sender === curRecipient && recipient === curSender)) {
     const username = sender === curSender ? 'You' : sender;
     const isSent = sender === curSender;
-    appendMessage(username, decrypted, isSent, imageUrl, isGif);
+    appendMessage(username, decrypted, isSent, imageUrl, isGif, msgKey, replyTo);
   }
 }
 
@@ -276,6 +474,8 @@ function sendMessage() {
   const key = sharedKey(sender, recipient);
   const encryptedText = CryptoJS.AES.encrypt(text, key).toString();
 
+  const replyData = replyToKey ? { replyToKey: replyToKey, replyToSender: replyToSender, replyToText: replyToText } : null;
+
   // If there's a pending GIF URL, send it directly
   if (pendingImageURL && !pendingImageFile) {
     messagesRef.push({
@@ -283,10 +483,12 @@ function sendMessage() {
       text: encryptedText,
       image: pendingImageURL,
       isGif: true,
+      replyTo: replyData,
       timestamp: firebase.database.ServerValue.TIMESTAMP
     });
     messageInput.value = '';
     clearPendingImage();
+    clearReply();
     sendTypingStatus(sender, recipient, false);
     clearTimeout(typingTimeout);
     return;
@@ -316,10 +518,12 @@ function sendMessage() {
             text: encryptedText,
             image: downloadURL,
             isGif: false,
+            replyTo: replyData,
             timestamp: firebase.database.ServerValue.TIMESTAMP
           });
           messageInput.value = '';
           clearPendingImage();
+          clearReply();
           hideUploadOverlay();
           sendTypingStatus(sender, recipient, false);
           clearTimeout(typingTimeout);
@@ -330,9 +534,11 @@ function sendMessage() {
     messagesRef.push({
       sender, recipient,
       text: encryptedText,
+      replyTo: replyData,
       timestamp: firebase.database.ServerValue.TIMESTAMP
     });
     messageInput.value = '';
+    clearReply();
     sendTypingStatus(sender, recipient, false);
     clearTimeout(typingTimeout);
   }
@@ -411,6 +617,7 @@ messageInput.addEventListener('keydown', function(e) {
 // --- Firebase listener ---
 messagesRef.on('child_added', (snapshot) => {
   const msg = snapshot.val();
+  const msgKey = snapshot.key;
   const curSender = usernameInput.value.trim();
   const curRecipient = recipientInput.value.trim();
 
@@ -424,7 +631,7 @@ messagesRef.on('child_added', (snapshot) => {
     sendBrowserNotification(msg.sender, decrypted || (msg.image ? 'Sent an image' : 'Sent a message'));
   }
 
-  appendDecryptedMessage(msg.sender, msg.recipient, msg.text, msg.image, msg.isGif);
+  appendDecryptedMessage(msg.sender, msg.recipient, msg.text, msg.image, msg.isGif, msgKey, msg.replyTo || null);
 
   // Mark initial load as done after a short delay to skip historical messages
   if (!initialLoadDone) {
