@@ -48,6 +48,66 @@ let pendingImageFile = null;
 let pendingImageURL = null;
 let gifSearchTimeout = null;
 let activePicker = null;
+let pageVisible = true;
+let initialLoadDone = false;
+let pageVisible = true;
+// --- Browser push notifications ---
+function requestNotificationPermission() {
+  if (!('Notification' in window)) return;
+  if (Notification.permission === 'default') {
+    Notification.requestPermission();
+  }
+}
+requestNotificationPermission();
+
+function sendBrowserNotification(sender, text) {
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  if (pageVisible) return;
+  const preview = text.length > 80 ? text.substring(0, 80) + '...' : text;
+  const notif = new Notification(`${sender} sent a message`, {
+    body: preview,
+    icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">💬</text></svg>',
+    tag: 'chat-message'
+  });
+  notif.onclick = () => {
+    window.focus();
+    notif.close();
+  };
+}
+
+document.addEventListener('visibilitychange', () => {
+  pageVisible = !document.hidden;
+});
+
+let initialLoadDone = false;
+
+// --- Browser push notifications ---
+function requestNotificationPermission() {
+  if (!('Notification' in window)) return;
+  if (Notification.permission === 'default') {
+    Notification.requestPermission();
+  }
+}
+requestNotificationPermission();
+
+function sendBrowserNotification(sender, text) {
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  if (pageVisible) return;
+  const preview = text.length > 80 ? text.substring(0, 80) + '...' : text;
+  const notif = new Notification(`${sender} sent a message`, {
+    body: preview,
+    icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">💬</text></svg>',
+    tag: 'chat-message'
+  });
+  notif.onclick = () => {
+    window.focus();
+    notif.close();
+  };
+}
+
+document.addEventListener('visibilitychange', () => {
+  pageVisible = !document.hidden;
+});
 
 // --- Ephemeral mode ---
 if (localStorage.getItem('ephemeral') === 'true') {
@@ -305,7 +365,23 @@ function showImagePreviewBar(src, name) {
 
 function clearPendingImage() {
   pendingImageFile = null;
+  const curSender = usernameInput.value.trim();
+  const curRecipient = recipientInput.value.trim();
+
+  const isRelevant = (msg.sender === curSender && msg.recipient === curRecipient) ||
+                     (msg.sender === curRecipient && msg.recipient === curSender);
+  const isIncoming = msg.sender === curRecipient;
+
+  if (isRelevant && isIncoming && initialLoadDone) {
+    const decrypted = CryptoJS.AES.decrypt(msg.text, sharedKey(msg.sender, msg.recipient)).toString(CryptoJS.enc.Utf8);
+    sendBrowserNotification(msg.sender, decrypted || (msg.image ? 'Sent an image' : 'Sent a message'));
+  }
+
   pendingImageURL = null;
+
+  if (!initialLoadDone) {
+    setTimeout(() => { initialLoadDone = true; }, 1500);
+  }
   imageInput.value = '';
   imagePreviewBar.classList.remove('active');
   imagePreviewBar.innerHTML = '';
@@ -335,7 +411,25 @@ messageInput.addEventListener('keydown', function(e) {
 // --- Firebase listener ---
 messagesRef.on('child_added', (snapshot) => {
   const msg = snapshot.val();
+  const curSender = usernameInput.value.trim();
+  const curRecipient = recipientInput.value.trim();
+
+  // Skip initial historical messages for notifications
+  const isRelevant = (msg.sender === curSender && msg.recipient === curRecipient) ||
+                     (msg.sender === curRecipient && msg.recipient === curSender);
+  const isIncoming = msg.sender === curRecipient;
+
+  if (isRelevant && isIncoming && initialLoadDone) {
+    const decrypted = CryptoJS.AES.decrypt(msg.text, sharedKey(msg.sender, msg.recipient)).toString(CryptoJS.enc.Utf8);
+    sendBrowserNotification(msg.sender, decrypted || (msg.image ? 'Sent an image' : 'Sent a message'));
+  }
+
   appendDecryptedMessage(msg.sender, msg.recipient, msg.text, msg.image, msg.isGif);
+
+  // Mark initial load as done after a short delay to skip historical messages
+  if (!initialLoadDone) {
+    setTimeout(() => { initialLoadDone = true; }, 1500);
+  }
 });
 
 // --- Image preview popup ---
