@@ -1,0 +1,10 @@
+{
+  "name": "project",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "npx serve -s . -l 3000",
+    "build": "echo 'Static site, no build required'",
+    "start": "npx serve -s . -l 3000"
+  }
+}
