@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Chat</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/3.1.9-1/crypto-js.js"></script>
   <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
@@ -10,54 +10,44 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <div id="blur-overlay">
-    <div id="chat-container">
-      <div id="chat-header">
-        <span id="chat-recipient-name"></span>
-        <div id="typing-indicator">
-          <div class="typing-dot"></div>
-          <div class="typing-dot"></div>
-          <div class="typing-dot"></div>
-        </div>
-      </div>
-      <div id="chat-messages"></div>
-      <div id="image-preview-bar"></div>
-      <div id="reply-preview-bar" class="hidden">
-        <div id="reply-preview-content">
-          <span id="reply-preview-name"></span>
-          <span id="reply-preview-text"></span>
-        </div>
-        <button id="reply-preview-close" class="icon-btn"><span class="material-symbols-outlined">close</span></button>
-      </div>
-      <div class="input-container" id="input-container">
-        <input type="text" class="username-input" id="username-input" placeholder="Your Name">
-        <input type="text" class="recipient-input" id="recipient-input" placeholder="Recipient">
-        <div id="message-row">
-          <button id="emoji-btn" class="icon-btn" title="Emoji"><span class="material-symbols-outlined">mood</span></button>
-          <button id="gif-btn" class="icon-btn" title="GIF"><span class="material-symbols-outlined">gif</span></button>
-          <label for="image-input" id="image-upload-btn" class="icon-btn" title="Upload Image">
-            <span class="material-symbols-outlined">image</span>
-          </label>
-          <input type="file" accept="image/*" id="image-input" style="display: none;">
-          <input type="text" id="message-input" placeholder="Type your message...">
-          <button id="send-btn" class="send-btn"><span class="material-symbols-outlined">send</span></button>
-        </div>
+  <div id="chat-container">
+    <div id="chat-header">
+      <span id="chat-recipient-name"></span>
+      <div id="typing-indicator">
+        <div class="typing-dot"></div>
+        <div class="typing-dot"></div>
+        <div class="typing-dot"></div>
       </div>
     </div>
-    <div id="info-container">
-      <label id="ephemeral-toggle">
-        <input type="checkbox" id="ephemeral-checkbox"> Messages disappear on refresh
-      </label>
-      <hr>
-      <h3>Formatting</h3>
-      <p>You can use <a href="https://www.markdownguide.org/basic-syntax/" target="_blank">Markdown Basic Syntax</a>.</p>
+    <div id="chat-messages"></div>
+    <div id="image-preview-bar"></div>
+    <div id="reply-preview-bar" class="hidden">
+      <div id="reply-preview-content">
+        <span id="reply-preview-name"></span>
+        <span id="reply-preview-text"></span>
+      </div>
+      <button id="reply-preview-close" class="icon-btn"><span class="material-symbols-outlined">close</span></button>
+    </div>
+    <div class="input-container" id="input-container">
+      <input type="text" class="username-input" id="username-input" placeholder="Your Name" autocomplete="off">
+      <input type="text" class="recipient-input" id="recipient-input" placeholder="Recipient" autocomplete="off">
+      <div id="message-row">
+        <button id="emoji-btn" class="icon-btn" title="Emoji"><span class="material-symbols-outlined">mood</span></button>
+        <button id="gif-btn" class="icon-btn" title="GIF"><span class="material-symbols-outlined">gif</span></button>
+        <label for="image-input" id="image-upload-btn" class="icon-btn" title="Upload Image">
+          <span class="material-symbols-outlined">image</span>
+        </label>
+        <input type="file" accept="image/*" id="image-input" style="display: none;">
+        <input type="text" id="message-input" placeholder="Type your message..." autocomplete="off">
+        <button id="send-btn" class="send-btn"><span class="material-symbols-outlined">send</span></button>
+      </div>
     </div>
   </div>
 
   <!-- Emoji Picker -->
   <div id="emoji-picker" class="picker-panel hidden">
     <div id="emoji-search-bar">
-      <input type="text" id="emoji-search" placeholder="Search emoji...">
+      <input type="text" id="emoji-search" placeholder="Search emoji..." autocomplete="off">
     </div>
     <div id="emoji-grid"></div>
   </div>
@@ -65,7 +55,7 @@
   <!-- GIF Picker -->
   <div id="gif-picker" class="picker-panel hidden">
     <div id="gif-search-bar">
-      <input type="text" id="gif-search" placeholder="Search GIFs...">
+      <input type="text" id="gif-search" placeholder="Search GIFs..." autocomplete="off">
     </div>
     <div id="gif-grid"></div>
     <div id="gif-powered">Powered by GIPHY</div>
