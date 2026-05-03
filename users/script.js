@@ -89,6 +89,17 @@ document.addEventListener('visibilitychange', () => {
   pageVisible = !document.hidden;
 });
 
+// --- Keep header visible when mobile keyboard opens ---
+const chatHeader = document.getElementById('chat-header');
+function ensureHeaderVisible() {
+  requestAnimationFrame(() => {
+    chatHeader.scrollIntoView({ block: 'start' });
+  });
+}
+document.querySelectorAll('input, textarea').forEach(el => {
+  el.addEventListener('focus', ensureHeaderVisible);
+});
+
 // --- URL params ---
 function getURLParams() {
   const urlParams = new URLSearchParams(window.location.search);

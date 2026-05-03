@@ -31,6 +31,10 @@ body {
     flex-direction: column;
     background-color: #ffffff;
     overflow: hidden;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
 }
 
 /* Chat Header */
@@ -43,8 +47,6 @@ body {
     border-bottom: 1px solid #e8e8e8;
     min-height: 52px;
     flex-shrink: 0;
-    position: sticky;
-    top: 0;
     z-index: 100;
 }
 
