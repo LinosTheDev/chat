@@ -61,28 +61,169 @@ let replyToText = null;
 let activeReactionMsgKey = null;
 const messageKeyMap = new Map();
 
-// --- Browser push notifications ---
-function requestNotificationPermission() {
-  if (!('Notification' in window)) return;
-  if (Notification.permission === 'default') {
-    Notification.requestPermission();
+// --- Push notifications (FCM via service worker) ---
+const FCM_VAPID_KEY = 'BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxKK-0F1i5N3K3aS0l0KqO1q5r0h7n3s3s3s3s3s';
+const notifToggle = document.getElementById('notif-toggle');
+let pushEnabled = false;
+let messaging = null;
+
+try {
+  messaging = firebase.messaging();
+  messaging.usePublicVapidKey(FCM_VAPID_KEY);
+} catch (e) {
+  console.warn('Firebase messaging not available:', e);
+}
+
+async function registerServiceWorker() {
+  if (!('serviceWorker' in navigator)) return null;
+  try {
+    const reg = await navigator.serviceWorker.register('sw.js', { scope: './' });
+    return reg;
+  } catch (err) {
+    console.warn('Service worker registration failed:', err);
+    return null;
   }
 }
-requestNotificationPermission();
+
+async function enablePushNotifications() {
+  if (!messaging) {
+    alert('Push notifications are not supported in this browser.');
+    return;
+  }
+
+  const permission = await Notification.requestPermission();
+  if (permission !== 'granted') {
+    alert('Please allow notifications to enable push notifications.');
+    return;
+  }
+
+  const reg = await registerServiceWorker();
+  if (!reg) {
+    alert('Could not register service worker for push notifications.');
+    return;
+  }
+
+  try {
+    messaging.useServiceWorker(reg);
+    const token = await messaging.getToken();
+    if (!token) {
+      alert('Could not get push notification token.');
+      return;
+    }
+
+    const username = usernameInput.value.trim();
+    if (!username) {
+      alert('Please enter your name first.');
+      return;
+    }
+
+    const tokensRef = database.ref('pushTokens/' + username);
+    await tokensRef.child(token.replace(/[^a-zA-Z0-9]/g, '_')).set({
+      token: token,
+      platform: navigator.userAgent,
+      timestamp: firebase.database.ServerValue.TIMESTAMP
+    });
+
+    pushEnabled = true;
+    notifToggle.classList.add('active');
+    notifToggle.title = 'Push notifications enabled - click to disable';
+    localStorage.setItem('pushNotifUser', username);
+    localStorage.setItem('pushNotifEnabled', 'true');
+  } catch (err) {
+    console.error('Error enabling push:', err);
+    alert('Could not enable push notifications: ' + err.message);
+  }
+}
+
+async function disablePushNotifications() {
+  const username = usernameInput.value.trim();
+  if (!username) return;
+
+  try {
+    if (messaging) {
+      const token = await messaging.getToken();
+      if (token) {
+        await messaging.deleteToken();
+        const tokenKey = token.replace(/[^a-zA-Z0-9]/g, '_');
+        await database.ref('pushTokens/' + username + '/' + tokenKey).remove();
+      }
+    }
+  } catch (err) {
+    console.error('Error disabling push:', err);
+  }
+
+  pushEnabled = false;
+  notifToggle.classList.remove('active');
+  notifToggle.title = 'Enable push notifications';
+  localStorage.setItem('pushNotifEnabled', 'false');
+}
+
+function restorePushNotificationState() {
+  const savedUser = localStorage.getItem('pushNotifUser');
+  const savedEnabled = localStorage.getItem('pushNotifEnabled');
+  if (savedEnabled === 'true' && savedUser) {
+    notifToggle.classList.add('active');
+    notifToggle.title = 'Push notifications enabled - click to disable';
+    pushEnabled = true;
+  }
+}
+
+if (notifToggle) {
+  notifToggle.addEventListener('click', () => {
+    if (pushEnabled) {
+      disablePushNotifications();
+    } else {
+      enablePushNotifications();
+    }
+  });
+  restorePushNotificationState();
+}
 
 function sendBrowserNotification(sender, text) {
   if (!('Notification' in window) || Notification.permission !== 'granted') return;
   if (pageVisible) return;
   const preview = text.length > 80 ? text.substring(0, 80) + '...' : text;
-  const notif = new Notification(`${sender} sent a message`, {
-    body: preview,
-    icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">💬</text></svg>',
-    tag: 'chat-message'
+  if (messaging && pushEnabled && 'serviceWorker' in navigator) {
+    navigator.serviceWorker.ready.then(reg => {
+      reg.showNotification(sender + ' sent a message', {
+        body: preview,
+        icon: '../icon-192.png',
+        badge: '../icon-192.png',
+        tag: 'chat-message',
+        vibrate: [200, 100, 200]
+      });
+    });
+  } else {
+    const notif = new Notification(sender + ' sent a message', {
+      body: preview,
+      icon: '../icon-192.png',
+      tag: 'chat-message'
+    });
+    notif.onclick = () => { window.focus(); notif.close(); };
+  }
+}
+
+async function sendPushToRecipient(recipient, sender, text) {
+  if (!pushEnabled) return;
+  const tokensRef = database.ref('pushTokens/' + recipient);
+  const snapshot = await tokensRef.once('value');
+  if (!snapshot.exists()) return;
+
+  const tokens = [];
+  snapshot.forEach(child => {
+    const val = child.val();
+    if (val.token) tokens.push(val.token);
   });
-  notif.onclick = () => {
-    window.focus();
-    notif.close();
-  };
+  if (tokens.length === 0) return;
+
+  const preview = text.length > 80 ? text.substring(0, 80) + '...' : text;
+  const pushRef = database.ref('pushQueue').push();
+  await pushRef.set({
+    tokens: tokens,
+    title: sender + ' sent a message',
+    body: preview,
+    timestamp: firebase.database.ServerValue.TIMESTAMP
+  });
 }
 
 document.addEventListener('visibilitychange', () => {
@@ -468,6 +609,7 @@ function sendMessage() {
     clearReply();
     sendTypingStatus(sender, recipient, false);
     clearTimeout(typingTimeout);
+    sendPushToRecipient(recipient, sender, text || 'Sent a GIF');
     return;
   }
 
@@ -504,6 +646,7 @@ function sendMessage() {
           hideUploadOverlay();
           sendTypingStatus(sender, recipient, false);
           clearTimeout(typingTimeout);
+          sendPushToRecipient(recipient, sender, text || 'Sent an image');
         });
       }
     );
@@ -518,6 +661,7 @@ function sendMessage() {
     clearReply();
     sendTypingStatus(sender, recipient, false);
     clearTimeout(typingTimeout);
+    sendPushToRecipient(recipient, sender, text);
   }
 }
 

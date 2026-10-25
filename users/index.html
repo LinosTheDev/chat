@@ -2,7 +2,14 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Chat">
+  <meta name="theme-color" content="#ffffff">
+  <link rel="manifest" href="../manifest.json">
+  <link rel="apple-touch-icon" href="../icon-192.png">
   <title>Chat</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/3.1.9-1/crypto-js.js"></script>
   <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
@@ -18,6 +25,10 @@
         <div class="typing-dot"></div>
         <div class="typing-dot"></div>
       </div>
+      <button id="notif-toggle" class="icon-btn" title="Enable push notifications">
+        <span class="material-symbols-outlined notif-off">notifications_off</span>
+        <span class="material-symbols-outlined notif-on">notifications</span>
+      </button>
     </div>
     <div id="chat-messages"></div>
     <div id="image-preview-bar"></div>
@@ -85,6 +96,7 @@
   <script src="https://www.gstatic.com/firebasejs/8.2.2/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.2.2/firebase-database.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.2.2/firebase-storage.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.2.2/firebase-messaging.js"></script>
   <script src="script.js"></script>
 </body>
 </html>
