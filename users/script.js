@@ -239,8 +239,6 @@ const emailAlertSave = document.getElementById('email-alert-save');
 const emailAlertClear = document.getElementById('email-alert-clear');
 const emailSavedMsg = document.getElementById('email-saved-msg');
 let lastReceivedMsgTime = Date.now();
-let emailAlertTimer = null;
-let emailAlertCheckTimer = null;
 
 function getEmailAlertKey() {
   const sender = usernameInput.value.trim();
@@ -311,8 +309,7 @@ if (emailAlertSave) {
       localStorage.setItem('emailAlert_' + key, email);
       emailAlertBtn.classList.add('active');
       emailAlertBtn.title = 'Email alert set: ' + email;
-      showEmailSavedMsg('Email alert saved! You will be notified if no message is received for 10 minutes.', false);
-      startEmailAlertCheck();
+      showEmailSavedMsg('Email alert saved! You will get an email when a new message arrives after 10+ minutes of silence.', false);
       setTimeout(closeEmailModal, 1500);
     } catch (err) {
       showEmailSavedMsg('Error saving: ' + err.message, true);
@@ -331,7 +328,6 @@ if (emailAlertClear) {
       emailAlertInput.value = '';
       emailAlertBtn.classList.remove('active');
       emailAlertBtn.title = 'Set email alert';
-      stopEmailAlertCheck();
       showEmailSavedMsg('Email alert removed.', false);
     } catch (err) {
       showEmailSavedMsg('Error removing: ' + err.message, true);
@@ -346,67 +342,46 @@ function restoreEmailAlertState() {
   if (savedEmail) {
     emailAlertBtn.classList.add('active');
     emailAlertBtn.title = 'Email alert set: ' + savedEmail;
-    startEmailAlertCheck();
   }
 }
 
-function startEmailAlertCheck() {
-  stopEmailAlertCheck();
-  emailAlertCheckTimer = setInterval(checkEmailAlertInactivity, 60000);
-}
-
-function stopEmailAlertCheck() {
-  if (emailAlertCheckTimer) {
-    clearInterval(emailAlertCheckTimer);
-    emailAlertCheckTimer = null;
-  }
-}
-
-async function checkEmailAlertInactivity() {
+async function resetEmailAlertTimer(sender, text) {
   const key = getEmailAlertKey();
   if (!key) return;
-
   const savedEmail = localStorage.getItem('emailAlert_' + key);
-  if (!savedEmail) return;
 
   const now = Date.now();
   const elapsed = now - lastReceivedMsgTime;
   const tenMinutes = 10 * 60 * 1000;
 
-  if (elapsed < tenMinutes) return;
-
-  try {
-    const alertRef = database.ref('emailAlerts/' + key);
-    const snapshot = await alertRef.once('value');
-    if (!snapshot.exists()) return;
-    const alertData = snapshot.val();
-    if (alertData.alertSent) return;
-
-    const emailQueueRef = database.ref('emailQueue').push();
-    await emailQueueRef.set({
-      to: alertData.email,
-      subject: 'No new messages in your chat with ' + alertData.recipient,
-      body: 'You haven\'t received a message in your chat for over 10 minutes. Last activity: ' + new Date(lastReceivedMsgTime).toLocaleString(),
-      timestamp: firebase.database.ServerValue.TIMESTAMP,
-      alertKey: key
-    });
-
-    await alertRef.update({ alertSent: true });
-  } catch (err) {
-    console.error('Email alert check error:', err);
+  if (savedEmail && elapsed >= tenMinutes) {
+    try {
+      const alertRef = database.ref('emailAlerts/' + key);
+      const snapshot = await alertRef.once('value');
+      if (snapshot.exists()) {
+        const alertData = snapshot.val();
+        const minutes = Math.floor(elapsed / 60000);
+        const preview = text.length > 80 ? text.substring(0, 80) + '...' : text;
+        const emailQueueRef = database.ref('emailQueue').push();
+        await emailQueueRef.set({
+          to: alertData.email,
+          subject: sender + ' sent you a new message',
+          body: 'After ' + minutes + ' minutes of silence, ' + sender + ' sent: "' + preview + '". Open your chat to reply.',
+          timestamp: firebase.database.ServerValue.TIMESTAMP,
+          alertKey: key
+        });
+      }
+    } catch (err) {
+      console.error('Email alert send error:', err);
+    }
   }
-}
 
-function resetEmailAlertTimer() {
-  lastReceivedMsgTime = Date.now();
-  const key = getEmailAlertKey();
-  if (!key) return;
-  const savedEmail = localStorage.getItem('emailAlert_' + key);
-  if (!savedEmail) return;
-  database.ref('emailAlerts/' + key).update({
-    lastMessageTime: firebase.database.ServerValue.TIMESTAMP,
-    alertSent: false
-  }).catch(() => {});
+  lastReceivedMsgTime = now;
+  if (savedEmail) {
+    database.ref('emailAlerts/' + key).update({
+      lastMessageTime: firebase.database.ServerValue.TIMESTAMP
+    }).catch(() => {});
+  }
 }
 
 // --- Keep header visible when mobile keyboard opens ---
@@ -913,7 +888,7 @@ messagesRef.on('child_added', (snapshot) => {
   if (isRelevant && isIncoming && initialLoadDone) {
     const decrypted = CryptoJS.AES.decrypt(msg.text, sharedKey(msg.sender, msg.recipient)).toString(CryptoJS.enc.Utf8);
     sendBrowserNotification(msg.sender, decrypted || (msg.image ? 'Sent an image' : 'Sent a message'));
-    resetEmailAlertTimer();
+    resetEmailAlertTimer(msg.sender, decrypted || (msg.image ? 'Sent an image' : 'Sent a message'));
   }
 
   appendDecryptedMessage(msg.sender, msg.recipient, msg.text, msg.image, msg.isGif, msgKey, msg.replyTo || null);
