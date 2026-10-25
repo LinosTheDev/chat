@@ -1,0 +1,12 @@
+[12-Apr-2024 03:35:26 UTC] PHP Warning:  require_once(../vendor/autoload.php): Failed to open stream: No such file or directory in /home/hsnxnp2un41r/public_html/webchat/auth/firebase/firebase_config.php on line 2
+[12-Apr-2024 03:35:26 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '../vendor/autoload.php' (include_path='.:/opt/alt/php81/usr/share/pear:/opt/alt/php81/usr/share/php:/usr/share/pear:/usr/share/php') in /home/hsnxnp2un41r/public_html/webchat/auth/firebase/firebase_config.php:2
+Stack trace:
+#0 /home/hsnxnp2un41r/public_html/webchat/auth/register_process.php(2): require_once()
+#1 {main}
+  thrown in /home/hsnxnp2un41r/public_html/webchat/auth/firebase/firebase_config.php on line 2
+[12-Apr-2024 03:35:32 UTC] PHP Warning:  require_once(../vendor/autoload.php): Failed to open stream: No such file or directory in /home/hsnxnp2un41r/public_html/webchat/auth/firebase/firebase_config.php on line 2
+[12-Apr-2024 03:35:32 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '../vendor/autoload.php' (include_path='.:/opt/alt/php81/usr/share/pear:/opt/alt/php81/usr/share/php:/usr/share/pear:/usr/share/php') in /home/hsnxnp2un41r/public_html/webchat/auth/firebase/firebase_config.php:2
+Stack trace:
+#0 /home/hsnxnp2un41r/public_html/webchat/auth/register_process.php(2): require_once()
+#1 {main}
+  thrown in /home/hsnxnp2un41r/public_html/webchat/auth/firebase/firebase_config.php on line 2

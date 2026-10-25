@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>iMessage-like Chat App</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/3.1.9-1/crypto-js.js"></script>
+  <style>
+    body {
+      font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f4f4f4;
+    }
+
+    #chat-container {
+      max-width: 600px;
+      margin: 50px auto;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    #chat-messages {
+      height: 300px;
+      overflow-y: scroll;
+      padding: 10px;
+      background-color: #f4f4f4;
+    }
+
+    .message-container {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .message-bubble {
+      max-width: 70%;
+      padding: 10px;
+      border-radius: 15px;
+      margin-bottom: 10px;
+      position: relative;
+    }
+
+    .sent-message {
+      background-color: #007aff;
+      color: #fff;
+      align-self: flex-end;
+    }
+
+    .received-message {
+      background-color: #e5e5ea;
+      color: #000;
+      align-self: flex-start;
+    }
+
+    .read-receipt {
+      font-size: 12px;
+      color: #777;
+      position: absolute;
+      bottom: 0;
+      right: 5px;
+    }
+
+    .reaction-button {
+      cursor: pointer;
+      padding: 5px;
+      border: none;
+      background-color: transparent;
+      font-size: 14px;
+      margin-left: 5px;
+    }
+
+    .reactions {
+      display: flex;
+      align-items: center;
+      margin-top: 5px;
+    }
+
+    .input-container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px;
+    }
+
+    .username-input,
+    .recipient-input,
+    #message-input {
+      width: calc(30% - 5px);
+      padding: 10px;
+      border: none;
+      border-top: 1px solid #ccc;
+      border-radius: 0 0 0 10px;
+      box-sizing: border-box;
+      margin-bottom: 10px;
+    }
+
+    #message-input {
+      width: calc(70% - 5px);
+      border-radius: 0 0 10px 0;
+    }
+  </style>
+</head>
+<body>
+  <div id="chat-container">
+    <div id="chat-messages"></div>
+    <div class="input-container">
+      <input type="text" class="username-input" id="username-input" placeholder="Your Name">
+      <input type="text" class="recipient-input" id="recipient-input" placeholder="Recipient">
+      <input type="text" id="message-input" placeholder="Type your message...">
+    </div>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/8.2.2/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.2.2/firebase-database.js"></script>
+  <script>
+    // Initialize Firebase
+    const firebaseConfig = {
+      apiKey: 'AIzaSyDo9xLGYs3rzhgJKV_qVEyNxCUaRratbXc',
+      authDomain: 'https://chat-linos-default-rtdb.firebaseio.com/',
+      projectId: 'chat-linos',
+      storageBucket: 'gs://chat-linos.appspot.com',
+      messagingSenderId: '335597863138',
+      appId: '1:335597863138:web:bb28765ae4a27bae99debb'
+};
+
+    firebase.initializeApp(firebaseConfig);
+
+    const database = firebase.database();
+    const messagesRef = database.ref('messages');
+
+    const chatMessages = document.getElementById('chat-messages');
+    const messageInput = document.getElementById('message-input');
+    const usernameInput = document.getElementById('username-input');
+    const recipientInput = document.getElementById('recipient-input');
+
+    function sendMessage() {
+      const text = messageInput.value.trim();
+      const sender = usernameInput.value.trim();
+      const recipient = recipientInput.value.trim() || 'DemoRecipient';
+
+      if (text !== '' && sender) {
+        const key = sharedKey(sender, recipient);
+        const encryptedText = CryptoJS.AES.encrypt(text, key).toString();
+
+        messagesRef.push({ sender, recipient, text: encryptedText, timestamp: firebase.database.ServerValue.TIMESTAMP, reactions: [] });
+        messageInput.value = '';
+      }
+    }
+
+    function appendMessage(username, text, isSent, timestamp, read, reactions) {
+      const messageContainer = document.getElementById('chat-messages');
+
+      const messageElement = document.createElement('div');
+      const messageClass = isSent ? 'sent-message' : 'received-message';
+      messageElement.className = `message-bubble ${messageClass}`;
+      messageElement.innerHTML = `<strong>${username}:</strong> ${text}`;
+
+      const reactionsHtml = generateReactionsHtml(reactions);
+      if (reactionsHtml) {
+        const reactionsContainer = document.createElement('div');
+        reactionsContainer.className = 'reactions';
+        reactionsContainer.innerHTML = reactionsHtml;
+        messageElement.appendChild(reactionsContainer);
+      }
+
+      const readReceipt = read ? '<div class="read-receipt">Read</div>' : '';
+      messageElement.innerHTML += readReceipt;
+
+      messageContainer.appendChild(messageElement);
+      messageContainer.scrollTop = messageContainer.scrollHeight;
+    }
+
+    function generateReactionsHtml(reactions) {
+      if (reactions && reactions.length > 0) {
+        return reactions.map(reaction => `<button class="reaction-button" onclick="reactToMessage('${reaction.messageId}', '${reaction.reaction}')">${reaction.reaction}</button>`).join('');
+      }
+      return '';
+    }
+
+    function reactToMessage(messageId, reaction) {
+      const userId = usernameInput.value.trim();
+      messagesRef.child(messageId).child('reactions').push({ userId, reaction });
+    }
+
+    function appendDecryptedMessage(sender, recipient, encryptedText, key, timestamp, read, reactions, messageId) {
+      const decryptedText = CryptoJS.AES.decrypt(encryptedText, key).toString(CryptoJS.enc.Utf8);
+
+      if ((sender === usernameInput.value.trim() && recipient === recipientInput.value.trim()) ||
+          (recipient === usernameInput.value.trim() && sender === recipientInput.value.trim())) {
+        const username = sender === usernameInput.value.trim() ? 'You' : sender;
+        const isSent = sender === usernameInput.value.trim();
+        appendMessage(username, decryptedText, isSent, timestamp, read, reactions);
+      }
+    }
+
+    function sharedKey(sender, recipient) {
+      return `${sender}-${recipient}-shared-key`;
+    }
+
+    messageInput.addEventListener('keypress', (event) => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        sendMessage();
+      }
+    });
+
+    messagesRef.on('child_added', (snapshot) => {
+      const message = snapshot.val();
+      const reactions = message.reactions ? Object.values(message.reactions) : [];
+      appendDecryptedMessage(message.sender, message.recipient, message.text, sharedKey(message.sender, message.recipient), message.timestamp, message.read, reactions, snapshot.key);
+    });
+  </script>
+</body>
+</html>

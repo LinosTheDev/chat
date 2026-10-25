@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chat by Linos!</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/3.1.9-1/crypto-js.js"></script>
+  <style>
+    body {
+      font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f4f4f4;
+    }
+
+    #chat-container {
+      max-width: 600px;
+      margin: 50px auto;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    #chat-messages {
+      height: 300px;
+      overflow-y: scroll;
+      padding: 10px;
+      background-color: #f4f4f4;
+    }
+
+    .message-container {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .message-bubble {
+      max-width: 70%;
+      padding: 10px;
+      border-radius: 15px;
+      margin-bottom: 10px;
+    }
+
+    .sent-message {
+      background-color: #007aff;
+      color: #fff;
+      align-self: flex-end;
+    }
+
+    .received-message {
+      background-color: #e5e5ea;
+      color: #000;
+      align-self: flex-start;
+    }
+
+    .input-container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px;
+    }
+
+    .username-input,
+    .recipient-input,
+    #message-input {
+      width: calc(50% - 5px);
+      padding: 10px;
+      border: none;
+      border-top: 1px solid #ccc;
+      border-radius: 10px 10px 10px 10px;
+      box-sizing: border-box;
+      margin-bottom: 10px;
+    }
+
+    #message-input {
+      width: calc(85%);
+      border-radius: 10px 10px 10px 10px;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .send-btn {
+      width: calc(15% - 5px);
+      padding: 10px;
+      border: none;
+      color: #ffffff;
+      background-color: #007aff;
+      border-top: 1px solid #ccc;
+      border-radius: 10px 10px 10px 10px;
+      box-sizing: border-box;
+      margin-bottom: 10px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div id="chat-container">
+    <div id="chat-messages"></div>
+    <div class="input-container" id="input-container">
+      <input type="text" class="username-input" id="username-input" placeholder="Your Name">
+      <input type="text" class="recipient-input" id="recipient-input" placeholder="Recipient">
+      <input type="text" id="message-input" placeholder="Type your message...">
+      <button onclick="sendMessage()" class="send-btn">Send</button>
+    </div>
+  </div>
+  <h3 style="text-align:center">How to send images</h3>
+  <p style="text-align:center">Paste an image link. Full image support coming soon.</p>
+  <script src="https://www.gstatic.com/firebasejs/8.2.2/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.2.2/firebase-database.js"></script>
+  <script>
+    // Initialize Firebase
+    const firebaseConfig = {
+      apiKey: 'AIzaSyDo9xLGYs3rzhgJKV_qVEyNxCUaRratbXc',
+      authDomain: 'https://chat-linos-default-rtdb.firebaseio.com/',
+      projectId: 'chat-linos',
+      storageBucket: 'gs://chat-linos.appspot.com',
+      messagingSenderId: '335597863138',
+      appId: '1:335597863138:web:bb28765ae4a27bae99debb'
+};
+
+    firebase.initializeApp(firebaseConfig);
+
+    const database = firebase.database();
+    const messagesRef = database.ref('messages');
+
+    const chatMessages = document.getElementById('chat-messages');
+    const messageInput = document.getElementById('message-input');
+    const usernameInput = document.getElementById('username-input');
+    const recipientInput = document.getElementById('recipient-input');
+    const inputContainer = document.getElementById('input-container');
+
+    // Function to parse URL parameters
+    function getURLParams() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const withUser = urlParams.get('with');
+      const user = urlParams.get('user');
+      return { withUser, user };
+    }
+
+    // Function to populate input fields with URL parameters
+    function populateInputs() {
+      const { withUser, user } = getURLParams();
+      if (withUser && user) {
+        recipientInput.value = withUser; // Now 'with' parameter is the recipient
+        usernameInput.value = user; // Now 'user' parameter is the sender
+        usernameInput.classList.add('hidden');
+        recipientInput.classList.add('hidden');
+      }
+    }
+
+    populateInputs(); // Call the function to populate inputs when the page loads
+
+    function sendMessage() {
+      const text = messageInput.value.trim();
+      const sender = usernameInput.value.trim();
+      const recipient = recipientInput.value.trim();
+
+      if (text !== '' && sender !== '' && recipient !== '') {
+        const key = sharedKey(sender, recipient);
+        const encryptedText = CryptoJS.AES.encrypt(text, key).toString();
+
+        messagesRef.push({ sender, recipient, text: encryptedText, timestamp: firebase.database.ServerValue.TIMESTAMP });
+        messageInput.value = '';
+      }
+    }
+
+    function appendMessage(username, text, isSent) {
+      const messageContainer = document.getElementById('chat-messages');
+
+      const messageElement = document.createElement('div');
+      const messageClass = isSent ? 'sent-message' : 'received-message';
+      messageElement.className = `message-bubble ${messageClass}`;
+      messageElement.innerHTML = `<strong>${username}:</strong> ${text}`;
+
+      messageContainer.appendChild(messageElement);
+      messageContainer.scrollTop = messageContainer.scrollHeight;
+    }
+
+    function appendDecryptedMessage(sender, recipient, encryptedText) {
+      const decryptedText = CryptoJS.AES.decrypt(encryptedText, sharedKey(sender, recipient)).toString(CryptoJS.enc.Utf8);
+
+      const currentSender = usernameInput.value.trim();
+      const currentRecipient = recipientInput.value.trim();
+document.title = "(new!) Chat by Linos";,
+      if ((sender === currentSender && recipient === currentRecipient) || (sender === currentRecipient && recipient === currentSender)) {
+        const username = sender === currentSender ? 'You' : sender;
+        const isSent = sender === currentSender;
+        appendMessage(username, decryptedText, isSent);
+
+        if (!isSent) {
+          sendPushNotification(decryptedText);
+        }
+      }
+    }
+
+    function sharedKey(sender, recipient) {
+      return `${sender}-${recipient}-shared-key`;
+    }
+
+    messageInput.addEventListener('keypress', (event) => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        sendMessage();
+      }
+    });
+
+    messagesRef.on('child_added', (snapshot) => {
+      const message = snapshot.val();
+      appendDecryptedMessage(message.sender, message.recipient, message.text);
+    });
+
+    // Function to request notification permission
+    function requestNotificationPermission() {
+      return new Promise((resolve, reject) => {
+        if (!('Notification' in window)) {
+          reject(new Error('Notifications not supported in this browser'));
+        } else if (Notification.permission === 'granted') {
+          resolve('granted');
+        } else if (Notification.permission !== 'denied') {
+          Notification.requestPermission()
+            .then(permission => {
+              if (permission === 'granted') {
+                resolve('granted');
+              } else {
+                reject(new Error('Notification permission denied'));
+              }
+            })
+            .catch(err => reject(err));
+        } else {
+          reject(new Error('Notification permission denied'));
+        }
+      });
+    }
+
+    // Function to send push notification
+    function sendPushNotification(message) {
+      requestNotificationPermission()
+        .then(permission => {
+          if (permission === 'granted') {
+            navigator.serviceWorker.register('service-worker.js')
+              .then(registration => {
+                registration.showNotification('New Message', {
+                  body: message,
+                  vibrate: [200, 100, 200, 100, 200, 100, 200],
+                  tag: 'chat-notification'
+                });
+              })
+              .catch(err => console.error('Service Worker registration failed:', err));
+          }
+        })
+        .catch(err => console.error('Failed to get notification permission:', err));
+    }
+  </script>
+</body>
+</html>

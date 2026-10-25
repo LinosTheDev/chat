@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Control Panel</title>
+  <script src="https://www.gstatic.com/firebasejs/8.2.2/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.2.2/firebase-database.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+    .control-panel {
+      background: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+    .control-panel h1 {
+      margin-top: 0;
+    }
+    .control-panel label {
+      display: block;
+      margin: 10px 0 5px;
+    }
+    .control-panel input[type="text"] {
+      width: 100%;
+      padding: 8px;
+      box-sizing: border-box;
+      margin-bottom: 10px;
+    }
+    .control-panel button {
+      padding: 10px 20px;
+      background-color: #007aff;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .control-panel button:hover {
+      background-color: #005bb5;
+    }
+  </style>
+</head>
+<body>
+  <div class="control-panel">
+    <h1>Control Panel</h1>
+    <label for="username">Username</label>
+    <input type="text" id="username" placeholder="Enter username">
+    <button onclick="togglePauseStatus()">Toggle Pause</button>
+  </div>
+  <script>
+    const firebaseConfig = {
+      apiKey: 'AIzaSyDo9xLGYs3rzhgJKV_qVEyNxCUaRratbXc',
+      authDomain: 'https://chat-linos-default-rtdb.firebaseio.com/',
+      projectId: 'chat-linos',
+      storageBucket: 'gs://chat-linos.appspot.com',
+      messagingSenderId: '335597863138',
+      appId: '1:335597863138:web:bb28765ae4a27bae99debb'
+};
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+
+    // Function to toggle pause status
+    function togglePauseStatus() {
+      const username = document.getElementById('username').value.trim();
+      if (username) {
+        const userRef = database.ref(`users/${username}`);
+        userRef.once('value', (snapshot) => {
+          const userData = snapshot.val();
+          if (userData) {
+            const newStatus = !userData.paused;
+            userRef.update({ paused: newStatus });
+            alert(`Chat for ${username} is now ${newStatus ? 'paused' : 'unpaused'}.`);
+          } else {
+            alert('Username not found.');
+          }
+        });
+      } else {
+        alert('Please enter a username.');
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,75 @@
+<!-- select-username.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Secure Chat App - Select Username</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f4f4f4;
+    }
+
+    #username-container {
+      max-width: 400px;
+      margin: 50px auto;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      padding: 20px;
+      background-color: #fff;
+    }
+
+    #username-input {
+      width: calc(100% - 20px);
+      padding: 10px;
+      border: none;
+      box-sizing: border-box;
+    }
+  </style>
+</head>
+<body>
+  <div id="username-container">
+    <h2>Select Your Username</h2>
+    <p>Enter your desired username:</p>
+    <input type="text" id="username-input" placeholder="Enter your username...">
+    <button onclick="setUsername()">Set Username</button>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/8.2.2/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.2.2/firebase-auth.js"></script>
+  <script>
+    // Initialize Firebase
+    const firebaseConfig = {
+      apiKey: 'AIzaSyDo9xLGYs3rzhgJKV_qVEyNxCUaRratbXc',
+      authDomain: 'https://chat-linos-default-rtdb.firebaseio.com/',
+      projectId: 'chat-linos',
+      storageBucket: 'gs://chat-linos.appspot.com',
+      messagingSenderId: '335597863138',
+      appId: '1:335597863138:web:bb28765ae4a27bae99debb'
+    };
+
+    firebase.initializeApp(firebaseConfig);
+
+    const auth = firebase.auth();
+
+    // Function to set the username
+    function setUsername() {
+      const usernameInput = document.getElementById('username-input');
+      const newUsername = usernameInput.value.trim();
+
+      if (newUsername !== '') {
+        auth.currentUser.updateProfile({
+          displayName: newUsername
+        }).then(() => {
+          window.location.href = 'manage-conversations.html';
+        }).catch(error => {
+          console.error('Error setting username:', error.message);
+        });
+      }
+    }
+  </script>
+</body>
+</html>

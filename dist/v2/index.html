@@ -1,0 +1,114 @@
+<!-- index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Secure Chat App</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f4f4f4;
+    }
+
+    #main-container {
+      max-width: 600px;
+      margin: 50px auto;
+    }
+
+    #login-form,
+    #logout-container {
+      display: none;
+    }
+
+    #logout-btn {
+      background-color: #f44336;
+      color: white;
+      padding: 10px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    #logout-btn:hover {
+      background-color: #d32f2f;
+    }
+  </style>
+</head>
+<body>
+  <div id="main-container">
+    <h1>Welcome to the Secure Chat App</h1>
+
+    <div id="login-form">
+      <p>Login or Sign Up:</p>
+      <button onclick="signInWithGoogle()">Sign in with Google</button>
+    </div>
+
+    <div id="logout-container">
+      <p>You are logged in as <span id="user-display-name"></span></p>
+      <button id="logout-btn" onclick="logout()">Logout</button>
+    </div>
+
+    <p>Choose an option:</p>
+    <ul>
+      <li><a href="select-username.html">Select Username</a></li>
+      <li><a href="manage-conversations.html">Manage Conversations</a></li>
+      <li><a href="chat.html">Chat</a></li>
+    </ul>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/8.2.2/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.2.2/firebase-auth.js"></script>
+  <script>
+    // Initialize Firebase
+    const firebaseConfig = {
+      apiKey: 'AIzaSyDo9xLGYs3rzhgJKV_qVEyNxCUaRratbXc',
+      authDomain: 'https://chat-linos-default-rtdb.firebaseio.com/',
+      projectId: 'chat-linos',
+      storageBucket: 'gs://chat-linos.appspot.com',
+      messagingSenderId: '335597863138',
+      appId: '1:335597863138:web:bb28765ae4a27bae99debb'
+};
+
+    firebase.initializeApp(firebaseConfig);
+
+    const auth = firebase.auth();
+
+    // Listen for authentication state changes
+    auth.onAuthStateChanged(user => {
+      const loginForm = document.getElementById('login-form');
+      const logoutContainer = document.getElementById('logout-container');
+      const userDisplayName = document.getElementById('user-display-name');
+
+      if (user) {
+        loginForm.style.display = 'none';
+        logoutContainer.style.display = 'block';
+        userDisplayName.textContent = user.displayName;
+      } else {
+        loginForm.style.display = 'block';
+        logoutContainer.style.display = 'none';
+      }
+    });
+
+    // Function to sign in with Google
+    function signInWithGoogle() {
+      const provider = new firebase.auth.GoogleAuthProvider();
+      auth.signInWithPopup(provider).catch(error => {
+        console.error('Error signing in with Google:', error.message);
+      });
+    }
+
+    // Function to log out
+    function logout() {
+      auth.signOut().then(() => {
+        // Redirect to the index page after logout
+        window.location.href = 'index.html';
+      }).catch(error => {
+        console.error('Error logging out:', error.message);
+      });
+    }
+  </script>
+</body>
+</html>
