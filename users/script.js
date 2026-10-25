@@ -230,6 +230,185 @@ document.addEventListener('visibilitychange', () => {
   pageVisible = !document.hidden;
 });
 
+// --- Email alert for inactivity ---
+const emailAlertBtn = document.getElementById('email-alert-btn');
+const emailModalOverlay = document.getElementById('email-modal-overlay');
+const emailModalClose = document.getElementById('email-modal-close');
+const emailAlertInput = document.getElementById('email-alert-input');
+const emailAlertSave = document.getElementById('email-alert-save');
+const emailAlertClear = document.getElementById('email-alert-clear');
+const emailSavedMsg = document.getElementById('email-saved-msg');
+let lastReceivedMsgTime = Date.now();
+let emailAlertTimer = null;
+let emailAlertCheckTimer = null;
+
+function getEmailAlertKey() {
+  const sender = usernameInput.value.trim();
+  const recipient = recipientInput.value.trim();
+  if (!sender || !recipient) return null;
+  return [sender, recipient].sort().join('-');
+}
+
+function showEmailSavedMsg(text, isError) {
+  emailSavedMsg.textContent = text;
+  emailSavedMsg.className = isError ? 'error' : 'success';
+  setTimeout(() => { emailSavedMsg.className = 'hidden'; }, 3000);
+}
+
+function openEmailModal() {
+  const key = getEmailAlertKey();
+  if (!key) {
+    alert('Please enter your name and recipient first.');
+    return;
+  }
+  emailModalOverlay.classList.remove('hidden');
+  emailAlertInput.value = localStorage.getItem('emailAlert_' + key) || '';
+  emailAlertInput.focus();
+}
+
+function closeEmailModal() {
+  emailModalOverlay.classList.add('hidden');
+}
+
+if (emailAlertBtn) {
+  emailAlertBtn.addEventListener('click', openEmailModal);
+}
+if (emailModalClose) {
+  emailModalClose.addEventListener('click', closeEmailModal);
+}
+if (emailModalOverlay) {
+  emailModalOverlay.addEventListener('click', (e) => {
+    if (e.target === emailModalOverlay) closeEmailModal();
+  });
+}
+
+function isValidEmail(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+if (emailAlertSave) {
+  emailAlertSave.addEventListener('click', async () => {
+    const email = emailAlertInput.value.trim();
+    const key = getEmailAlertKey();
+    if (!key) return;
+
+    if (!isValidEmail(email)) {
+      showEmailSavedMsg('Please enter a valid email address.', true);
+      return;
+    }
+
+    try {
+      const alertRef = database.ref('emailAlerts/' + key);
+      await alertRef.set({
+        email: email,
+        username: usernameInput.value.trim(),
+        recipient: recipientInput.value.trim(),
+        lastMessageTime: firebase.database.ServerValue.TIMESTAMP,
+        alertSent: false,
+        createdAt: firebase.database.ServerValue.TIMESTAMP
+      });
+
+      localStorage.setItem('emailAlert_' + key, email);
+      emailAlertBtn.classList.add('active');
+      emailAlertBtn.title = 'Email alert set: ' + email;
+      showEmailSavedMsg('Email alert saved! You will be notified if no message is received for 10 minutes.', false);
+      startEmailAlertCheck();
+      setTimeout(closeEmailModal, 1500);
+    } catch (err) {
+      showEmailSavedMsg('Error saving: ' + err.message, true);
+    }
+  });
+}
+
+if (emailAlertClear) {
+  emailAlertClear.addEventListener('click', async () => {
+    const key = getEmailAlertKey();
+    if (!key) return;
+
+    try {
+      await database.ref('emailAlerts/' + key).remove();
+      localStorage.removeItem('emailAlert_' + key);
+      emailAlertInput.value = '';
+      emailAlertBtn.classList.remove('active');
+      emailAlertBtn.title = 'Set email alert';
+      stopEmailAlertCheck();
+      showEmailSavedMsg('Email alert removed.', false);
+    } catch (err) {
+      showEmailSavedMsg('Error removing: ' + err.message, true);
+    }
+  });
+}
+
+function restoreEmailAlertState() {
+  const key = getEmailAlertKey();
+  if (!key) return;
+  const savedEmail = localStorage.getItem('emailAlert_' + key);
+  if (savedEmail) {
+    emailAlertBtn.classList.add('active');
+    emailAlertBtn.title = 'Email alert set: ' + savedEmail;
+    startEmailAlertCheck();
+  }
+}
+
+function startEmailAlertCheck() {
+  stopEmailAlertCheck();
+  emailAlertCheckTimer = setInterval(checkEmailAlertInactivity, 60000);
+}
+
+function stopEmailAlertCheck() {
+  if (emailAlertCheckTimer) {
+    clearInterval(emailAlertCheckTimer);
+    emailAlertCheckTimer = null;
+  }
+}
+
+async function checkEmailAlertInactivity() {
+  const key = getEmailAlertKey();
+  if (!key) return;
+
+  const savedEmail = localStorage.getItem('emailAlert_' + key);
+  if (!savedEmail) return;
+
+  const now = Date.now();
+  const elapsed = now - lastReceivedMsgTime;
+  const tenMinutes = 10 * 60 * 1000;
+
+  if (elapsed < tenMinutes) return;
+
+  try {
+    const alertRef = database.ref('emailAlerts/' + key);
+    const snapshot = await alertRef.once('value');
+    if (!snapshot.exists()) return;
+    const alertData = snapshot.val();
+    if (alertData.alertSent) return;
+
+    const emailQueueRef = database.ref('emailQueue').push();
+    await emailQueueRef.set({
+      to: alertData.email,
+      subject: 'No new messages in your chat with ' + alertData.recipient,
+      body: 'You haven\'t received a message in your chat for over 10 minutes. Last activity: ' + new Date(lastReceivedMsgTime).toLocaleString(),
+      timestamp: firebase.database.ServerValue.TIMESTAMP,
+      alertKey: key
+    });
+
+    await alertRef.update({ alertSent: true });
+  } catch (err) {
+    console.error('Email alert check error:', err);
+  }
+}
+
+function resetEmailAlertTimer() {
+  lastReceivedMsgTime = Date.now();
+  const key = getEmailAlertKey();
+  if (!key) return;
+  const savedEmail = localStorage.getItem('emailAlert_' + key);
+  if (!savedEmail) return;
+  database.ref('emailAlerts/' + key).update({
+    lastMessageTime: firebase.database.ServerValue.TIMESTAMP,
+    alertSent: false
+  }).catch(() => {});
+}
+
 // --- Keep header visible when mobile keyboard opens ---
 const chatHeader = document.getElementById('chat-header');
 function ensureHeaderVisible() {
@@ -259,6 +438,7 @@ function populateInputs() {
   }
 }
 populateInputs();
+restoreEmailAlertState();
 
 // --- Typing indicator ---
 function listenForTypingStatus(sender, recipient) {
@@ -733,6 +913,7 @@ messagesRef.on('child_added', (snapshot) => {
   if (isRelevant && isIncoming && initialLoadDone) {
     const decrypted = CryptoJS.AES.decrypt(msg.text, sharedKey(msg.sender, msg.recipient)).toString(CryptoJS.enc.Utf8);
     sendBrowserNotification(msg.sender, decrypted || (msg.image ? 'Sent an image' : 'Sent a message'));
+    resetEmailAlertTimer();
   }
 
   appendDecryptedMessage(msg.sender, msg.recipient, msg.text, msg.image, msg.isGif, msgKey, msg.replyTo || null);

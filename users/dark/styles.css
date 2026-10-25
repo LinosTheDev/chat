@@ -639,3 +639,128 @@ body {
         max-width: 180px;
     }
 }
+
+/* Email Alert Button */
+#email-alert-btn {
+    flex-shrink: 0;
+    margin-left: 4px;
+}
+#email-alert-btn.active {
+    color: #007aff;
+    background-color: #1a2a3a;
+}
+
+/* Email Alert Modal */
+#email-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 4000;
+    padding: 20px;
+}
+
+#email-modal {
+    background: #1a1a1a;
+    border-radius: 16px;
+    padding: 24px;
+    width: 100%;
+    max-width: 380px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    animation: modalIn 0.2s ease-out;
+}
+
+@keyframes modalIn {
+    from { opacity: 0; transform: scale(0.92); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+#email-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 18px;
+    font-weight: 600;
+    color: #e0e0e0;
+    margin-bottom: 12px;
+}
+
+#email-modal-desc {
+    font-size: 14px;
+    color: #888;
+    line-height: 1.5;
+    margin: 0 0 16px 0;
+}
+
+#email-alert-input {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid #2a2a2a;
+    border-radius: 10px;
+    font-size: 16px;
+    outline: none;
+    background-color: #111;
+    color: #e0e0e0;
+    transition: border-color 0.2s;
+    box-sizing: border-box;
+}
+
+#email-alert-input:focus {
+    border-color: #007aff;
+}
+
+#email-modal-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 16px;
+}
+
+.email-modal-btn {
+    flex: 1;
+    padding: 12px;
+    border: 1px solid #2a2a2a;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    background: #1a1a1a;
+    color: #e0e0e0;
+    transition: background-color 0.15s;
+}
+
+.email-modal-btn.primary {
+    background-color: #007aff;
+    color: #ffffff;
+    border-color: #007aff;
+}
+
+.email-modal-btn.primary:hover {
+    background-color: #0056d2;
+}
+
+.email-modal-btn:hover {
+    background-color: #2a2a2a;
+}
+
+#email-saved-msg {
+    margin-top: 14px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    text-align: center;
+}
+
+#email-saved-msg.success {
+    background: #1a3a1a;
+    color: #6ac46a;
+}
+
+#email-saved-msg.error {
+    background: #3a1a1a;
+    color: #e06a6a;
+}
